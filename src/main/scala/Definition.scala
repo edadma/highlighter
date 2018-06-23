@@ -1,6 +1,6 @@
 package xyz.hyperreal.highlighter
 
-import java.util.regex.{Matcher, Pattern}
+import java.util.regex.Pattern
 
 import xyz.hyperreal.backslash.AST
 

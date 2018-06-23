@@ -132,16 +132,16 @@ abstract class Highlighter {
         None
       }
 
-      case class Match( start: Int, end: Int, starts: Seq[Int], ends: Seq[Int] )
+      case class MatchInfo( start: Int, end: Int, starts: Seq[Int], ends: Seq[Int] )
 
-      def apply( rule: Rule ): Option[Seq[(Option[Match], Action)]] =
+      def apply( rule: Rule ): Option[(MatchInfo, Seq[Action])] =
         rule match {
           case MatchRule( regex, actions ) =>
             prefix( regex ) map { m =>
-                // create Match
-              }
-          case MismatchRule( regex, actions ) => option( !prefix(regex), actions )
-          case DefaultRule( actions ) => Some( actions )
+              (MatchInfo( m.start, m.end, for (i <- 1 to m.groupCount) yield m.start(i), for (i <- 1 to m.groupCount) yield m.start(i) ), actions)
+            }
+          case MismatchRule( regex, actions ) => prefix( regex ) map (_ => (null, actions))
+          case DefaultRule( actions ) => Some( (null, actions) )
           case rule@IncludeRule( include ) =>
             search( rule.rules(
               includes get include match {
@@ -150,17 +150,26 @@ abstract class Highlighter {
               } ), apply )
         }
 
-      search( stack.top.rules, apply ) match {
-        case None =>
-        case Some( actions ) =>
-          actions foreach {
-            case Match( tok ) =>
+      if (pos < code.length)
+        search( stack.top.rules, apply ) match {
+          case None =>
+            text( code charAt pos toString )
+            highlight( pos + 1 )
+          case Some( (info, actions) ) =>
+            actions foreach {
+              case Match( tok ) =>
+                output( code.substring(info.start, info.end), tok )
+            }
 
-          }
-      }
-
-
+            highlight( if (info eq null) pos else info.end )
+        }
     }
+
+    highlight( 0 )
+    flush
+
+    if (!trace)
+      result.toString
 
   }
 
