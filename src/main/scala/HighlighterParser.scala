@@ -12,7 +12,7 @@ object HighlighterParser extends RegexParsers {
     rep1(section) ^^ Definition
 
   def section =
-    optionSection | infoSection | stateSection
+    optionSection | infoSection// | stateSection
 
   def optionSection =
     "options" ~> rep1(options) ^^ Options
@@ -32,8 +32,8 @@ object HighlighterParser extends RegexParsers {
   def stateSection =
     "states" ~> rep1(state)
 
-  def state = ident ~ rep1(rule) ^^ {
-    case name ~ rules => State( name, rules )
+  def state = ident ~ ":" ~ rep1(rule) ^^ {
+    case name ~ _ ~ rules => State( name, rules )
   }
 
   def rule = """.*(?=\s*=>)""".r ~ "=>" ~ ident ^^ {
