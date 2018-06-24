@@ -12,7 +12,7 @@ object HighlighterParser extends RegexParsers {
     rep1(section) ^^ Definition
 
   def section =
-    optionSection | infoSection// | stateSection
+    optionSection | infoSection | templateSection | stateSection
 
   def optionSection =
     "options" ~> rep1(options) ^^ Options
@@ -25,12 +25,20 @@ object HighlighterParser extends RegexParsers {
     "definition" ~> rep1(infoItems) ^^ InfoItems
 
   def infoItems =
-    "name" ~> ident ^^ Name
+    "name" ~> ":" ~> ident ^^ Name
 
   def ident = """[a-zA-Z]\w*"""r
 
+  def templateSection =
+    "templates" ~> rep1(template) ^^ (ts => Templates( ts toMap ))
+
+  def template =
+    ident ~ ":" ~ "<<" ~ ".*(?=>>)".r ~ ">>" ^^ {
+      case n ~ _ ~ _ ~ t ~ _ => (n, t.trim)
+    }
+
   def stateSection =
-    "states" ~> rep1(state)
+    "states" ~> rep1(state) ^^ States
 
   def state = ident ~ ":" ~ rep1(rules) ^^ {
     case name ~ _ ~ rules => State( name, rules )
@@ -39,8 +47,8 @@ object HighlighterParser extends RegexParsers {
   def rules =
     matchRule
 
-  def matchRule = """.*(?=\s*=>)""".r ~ "=>" ~ ident ^^ {
-    case r ~ _ ~ t => MatchRule( r, List(t) )
+  def matchRule = """.*(?==>)""".r ~ "=>" ~ ident ^^ {
+    case r ~ _ ~ t => MatchRule( r.trim, List(Match(t)) )
   }
 
 //  def groupsRule = """.*(?=\s*=>)""".r ~ "=>" ~ "(" ~ rep1(ident) ~ ")" ^^ {
