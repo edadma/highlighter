@@ -32,14 +32,21 @@ object HighlighterParser extends RegexParsers {
   def stateSection =
     "states" ~> rep1(state)
 
-  def state = ident ~ ":" ~ rep1(rule) ^^ {
+  def state = ident ~ ":" ~ rep1(rules) ^^ {
     case name ~ _ ~ rules => State( name, rules )
   }
 
-  def rule = """.*(?=\s*=>)""".r ~ "=>" ~ ident ^^ {
+  def rules =
+    matchRule
+
+  def matchRule = """.*(?=\s*=>)""".r ~ "=>" ~ ident ^^ {
     case r ~ _ ~ t => MatchRule( r, List(t) )
   }
-  
+
+//  def groupsRule = """.*(?=\s*=>)""".r ~ "=>" ~ "(" ~ rep1(ident) ~ ")" ^^ {
+//    case r ~ _ ~ t => GroupRule( r, List(t) )
+//  }
+
   def apply( input: String ): Definition = parseAll( definition, input ) match {
     case Success( result, _ ) => result
     case failure : NoSuccess => scala.sys.error( failure.msg )
