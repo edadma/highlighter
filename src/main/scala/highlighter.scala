@@ -48,7 +48,7 @@ package object highlighter {
 
   implicit def string2state( state: String ) = Push( state )
 
-  implicit def string2pattern( regex: String ) = Pattern.compile( regex )
+//  implicit def string2pattern( regex: String ) = Pattern.compile( regex )
 
   implicit def strings2states( states: Seq[String] ) = states map (s => Push( s ))
 

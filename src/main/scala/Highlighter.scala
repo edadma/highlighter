@@ -1,7 +1,7 @@
 //@
 package xyz.hyperreal.highlighter
 
-import java.util.regex.Pattern
+import java.util.regex.{MatchResult, Pattern}
 
 import scala.util.matching.Regex
 import scala.collection.mutable.ArrayStack
@@ -14,8 +14,8 @@ abstract class Highlighter {
 
   var trace = false
   val parser = new Parser( Command.standard )
-  val (name, templates, states, classes, includes) = {
-    var flags = 0
+  val (flags, name, templates, states, classes, includes) = {
+    var _flags = 0
     var _name: String = getClass.getName
     var _templates: Map[String, AST] = null
     var _states: Map[String, State] = null
@@ -28,8 +28,8 @@ abstract class Highlighter {
           case Name( s ) => _name = s
           case Options( options ) =>
             options foreach {
-              case Ignorecase => flags |= Pattern.CASE_INSENSITIVE
-              case Dotall => flags |= Pattern.DOTALL
+              case Ignorecase => _flags |= Pattern.CASE_INSENSITIVE
+              case Dotall => _flags |= Pattern.DOTALL
             }
           case Templates( templates ) => _templates = templates
           case States( states ) => _states = states map (s => (s.name, s)) toMap
@@ -50,7 +50,7 @@ abstract class Highlighter {
     if (!_states.contains( "root" ))
       sys.error( "missing root state" )
 
-    (_name, _templates, _states, _classes, _includes) }
+    (_flags, _name, _templates, _states, _classes, _includes) }
   val config =
     Map(
       "today" -> "MMMM d, y",
@@ -132,15 +132,12 @@ abstract class Highlighter {
         None
       }
 
-      case class MatchInfo( start: Int, end: Int, starts: Seq[Int], ends: Seq[Int] )
-
-      def apply( rule: Rule ): Option[(MatchInfo, Seq[Action])] =
+      def apply( rule: Rule ): Option[(MatchResult, Seq[Action])] =
         rule match {
-          case MatchRule( regex, actions ) =>
-            prefix( regex ) map { m =>
-              (MatchInfo( m.start, m.end, for (i <- 1 to m.groupCount) yield m.start(i), for (i <- 1 to m.groupCount) yield m.start(i) ), actions)
-            }
-          case MismatchRule( regex, actions ) => prefix( regex ) map (_ => (null, actions))
+          case rule@MatchRule( regex, actions ) =>
+            prefix( rule.pattern(Pattern.compile(regex, flags)) ) map (m => (m, actions))
+          case rule@MismatchRule( regex, actions ) =>
+            prefix( rule.pattern(Pattern.compile(regex, flags)) ) map (_ => (null, actions))
           case DefaultRule( actions ) => Some( (null, actions) )
           case rule@IncludeRule( include ) =>
             search( rule.rules(

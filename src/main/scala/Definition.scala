@@ -22,9 +22,9 @@ case object Ignorecase extends LexerOption
 case object Dotall extends LexerOption
 
 trait Rule
-case class MatchRule( regex: Pattern, actions: Seq[Action] ) extends Rule
-case class MismatchRule( regex: Pattern, actions: Seq[Action] ) extends Rule
-case class DefaultRule(actions: Seq[Action] ) extends Rule
+case class MatchRule( regex: String, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
+case class MismatchRule( regex: String, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
+case class DefaultRule( actions: Seq[Action] ) extends Rule
 case class IncludeRule( include: String ) extends Rule { val rules = new Const[Seq[Rule]] }
 
 trait Action
