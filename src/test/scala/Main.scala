@@ -23,7 +23,9 @@ object Main extends App {
               Seq(
                 State( "root",
                   Seq(
-                    MatchRule( "val", 'keyword )
+                    MatchRule( "val", 'keyword ),
+                    """\d+""" -> 'number,
+                    """\w+""" -> 'ident
                   )
                 )
               )

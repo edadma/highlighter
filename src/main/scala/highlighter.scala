@@ -66,9 +66,7 @@ package object highlighter {
 
   val Text = Token( "text", "text" )
 
-//  implicit def string2regex( regex: String ) = regex.r
-
-//  implicit def tuple2template( template: (String, String) ): (String, AST) = (template._1, template._2)
+  implicit def tuple2rule( rule: (String, Symbol) ) = MatchRule( rule._1, rule._2 )
 
 //  implicit def symbol2action( clas: Symbol ) = Action( clas )
 }
