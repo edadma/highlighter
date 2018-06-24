@@ -9,6 +9,8 @@ object Main extends App {
     """.stripMargin
   val highlighter =
     new Highlighter {
+      //trace = true
+
       override def define: Definition =
         Definition(
           Seq(
@@ -29,5 +31,7 @@ object Main extends App {
           )
         )
     }
+
+  println( highlighter.highlight(input) )
 
 }

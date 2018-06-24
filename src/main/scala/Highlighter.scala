@@ -70,9 +70,9 @@ abstract class Highlighter {
     var prevclass: String = null
     var prevast: AST = null
 
-    def dotrace( op: String, s: => Any ) =
+    def dotrace( s: Any ) =
       if (trace)
-        println( s"$op: $s" )
+        println( s )
 
     def output( s: String, clas: Token ) =
       if (s nonEmpty) {
@@ -149,6 +149,8 @@ abstract class Highlighter {
                 case Some( r ) => r
               } ), apply )
         }
+
+      dotrace( s"search: pos = $pos" )
 
       if (pos < code.length)
         search( stack.top.rules, apply ) match {
