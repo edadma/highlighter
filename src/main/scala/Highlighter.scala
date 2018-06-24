@@ -25,7 +25,10 @@ abstract class Highlighter {
     define match {
       case Definition( sections ) =>
         sections foreach {
-          case Name( s ) => _name = s
+          case InfoItems( items ) =>
+            items foreach {
+              case Name( s ) => _name = s
+            }
           case Options( options ) =>
             options foreach {
               case Ignorecase => _flags |= Pattern.CASE_INSENSITIVE

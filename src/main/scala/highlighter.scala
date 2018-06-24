@@ -3,6 +3,8 @@ package xyz.hyperreal
 import java.util.regex.Pattern
 
 import scala.util.matching.Regex
+import scala.util.parsing.input.Position
+
 import xyz.hyperreal.backslash.{Command, Parser}
 
 
@@ -30,6 +32,12 @@ package object highlighter {
 
   def symbols( words: Seq[String], suffix: String = "" ) =
     new Regex( words sortWith (_.length > _.length) map Pattern.quote mkString ("(?:", "|", ")" + suffix) )
+
+  def problem( pos: Position, error: String ) =
+    if (pos eq null)
+      sys.error( error )
+    else
+      sys.error( pos.line + ": " + error + "\n" + pos.longString )
 
   implicit def symbol2token( clas: Symbol ) = Token( clas.name )
 

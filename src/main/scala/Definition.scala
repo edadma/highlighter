@@ -8,12 +8,15 @@ import xyz.hyperreal.backslash.AST
 case class Definition( sections: Seq[Section] )
 
 trait Section
-case class Name( s: String ) extends Section
+case class InfoItems( items: Seq[InfoItem] ) extends Section
 case class Options( options: Seq[LexerOption] ) extends Section
 case class Templates( templates: Map[String, AST] ) extends Section
 case class States( states: Seq[State] ) extends Section
 case class Includes( includes: Map[String, Seq[Rule]] ) extends Section
 case class Classes( classes: Map[String, String] ) extends Section
+
+trait InfoItem
+case class Name( s: String ) extends InfoItem
 
 case class State( name: String, rules: Seq[Rule] )
 
