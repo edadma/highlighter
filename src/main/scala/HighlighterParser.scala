@@ -21,39 +21,42 @@ object HighlighterParser extends RegexParsers {
     optionSection | infoSection | templateSection | stateSection
 
   def optionSection =
-    "options" ~> rep1(options) ^^ Options
+    "options" ~> nl ~> rep1(options) ^^ (o => Options( o.flatten ))
 
   def options =
+    "regex" ~> ":" ~> rep1(regexFlags) <~ onl
+
+  def regexFlags =
     "ignorecase" ^^^ Ignorecase |
     "dotall" ^^^ Dotall
 
   def infoSection =
-    "definition" ~> nl ~> rep1sep(infoItems, nl) <~ onl ^^ InfoItems
+    "definition" ~> nl ~> rep1(infoItems) ^^ InfoItems
 
   def infoItems =
-    "name" ~> ":" ~> ident ^^ Name
+    "name" ~> ":" ~> ident <~ onl ^^ Name
 
   def ident = """[a-zA-Z]\w*"""r
 
   def templateSection =
-    "templates" ~> nl ~> rep1sep(template, nl) <~ onl ^^ (ts => Templates( ts toMap ))
+    "templates" ~> nl ~> rep1(template) ^^ (ts => Templates( ts toMap ))
 
   def template =
-    ident ~ ":" ~ "<<" ~ ".*(?=>>)".r ~ ">>" ^^ {
+    ident ~ ":" ~ "<<" ~ ".*(?=>>)".r ~ ">>" <~ onl ^^ {
       case n ~ _ ~ _ ~ t ~ _ => (n, t.trim)
     }
 
   def stateSection =
     "states" ~> nl ~> rep1(state) ^^ States
 
-  def state = ident ~ ":" ~ onl ~ rep1sep(rules, nl) ^^ {
+  def state = ident ~ ":" ~ onl ~ rep1(rules) ^^ {
     case name ~ _ ~ _ ~ rules => State( name, rules )
   }
 
   def rules =
     matchRule
 
-  def matchRule = """.*(?==>)""".r ~ "=>" ~ rep1(action) ^^ {
+  def matchRule = """.*(?==>)""".r ~ "=>" ~ rep1(action) <~ onl ^^ {
     case r ~ _ ~ a => MatchRule( r.trim, a )
   }
 

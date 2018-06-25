@@ -54,6 +54,6 @@ object Main extends App {
 //        )
     }
 
-//  println( highlighter.highlight(input) )
+  println( highlighter.highlight(input) )
 
 }
