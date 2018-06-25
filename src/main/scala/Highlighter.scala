@@ -169,6 +169,7 @@ abstract class Highlighter {
                     case Some( s ) => s
                   } )
               case Pop => stack pop
+              case Popn( n ) => for (_ <- 1 to n) stack pop
             }
 
             highlight( if (info eq null) pos else info.end )
