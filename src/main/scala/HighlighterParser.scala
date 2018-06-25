@@ -28,7 +28,8 @@ object HighlighterParser extends RegexParsers {
 
   def regexFlags =
     "ignorecase" ^^^ Ignorecase |
-    "dotall" ^^^ Dotall
+    "dotall" ^^^ Dotall |
+    "multiline" ^^^ Multiline
 
   def infoSection =
     "definition" ~> nl ~> rep1(infoItems) ^^ InfoItems

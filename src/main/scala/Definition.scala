@@ -23,6 +23,7 @@ case class State( name: String, rules: Seq[Rule] )
 trait LexerOption
 case object Ignorecase extends LexerOption
 case object Dotall extends LexerOption
+case object Multiline extends LexerOption
 
 trait Rule
 case class MatchRule( regex: String, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }

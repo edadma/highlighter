@@ -8,9 +8,8 @@ object Main extends App {
       |val a = 123
       |/* asdf
       | zxcv */
-      |val b = 456
-      |
-      |one => two
+      |val b = 456 // this is a comment
+      |val c = 789
     """.stripMargin
   val highlighter =
     new Highlighter {
@@ -21,17 +20,17 @@ object Main extends App {
           |definition
           |  name: asdf
           |options
-          |  regex: dotall
+          |  regex: dotall multiline
           |templates
           |  default: << <\class\ "\escape\text"> >>
           |states
           |  root:
-          |    val   => keyword
-          |    \d+   => number
-          |    \w+   => ident
-          |    \=\>  => symbol
-          |    =     => symbol
-          |    /\*   => comment >comment
+          |    val     => keyword
+          |    \d+     => number
+          |    \w+     => ident
+          |    =       => symbol
+          |    /\*     => comment >comment
+          |    //.*?$  => comment
           |  comment:
           |    \*/   => comment ^
           |    .     => comment

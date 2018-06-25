@@ -33,6 +33,7 @@ abstract class Highlighter {
             options foreach {
               case Ignorecase => _flags |= Pattern.CASE_INSENSITIVE
               case Dotall => _flags |= Pattern.DOTALL
+              case Multiline => _flags |= Pattern.MULTILINE
             }
           case Templates( templates ) => _templates = templates
           case States( states ) => _states = states map (s => (s.name, s)) toMap
