@@ -178,9 +178,7 @@ abstract class Highlighter {
     highlight( 0 )
     flush
 
-    if (!trace)
-      result.toString
-
+    if (trace) "" else result.toString
   }
 
 }
