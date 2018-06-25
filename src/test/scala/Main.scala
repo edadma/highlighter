@@ -22,11 +22,12 @@ object Main extends App {
           |        \d+  => number
           |        \w+  => ident
           |        =    => symbol
-          |        /*   => comment >comment
-          |  comment: */  => comment ^
-          |           .   => comment
         """.stripMargin
       )
+
+//      /*   => comment >comment
+//comment: */  => comment ^
+//      .   => comment
 
       println( define )
 

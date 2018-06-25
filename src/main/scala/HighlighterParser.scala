@@ -46,8 +46,8 @@ object HighlighterParser extends RegexParsers {
   def stateSection =
     "states" ~> nl ~> rep1(state) ^^ States
 
-  def state = ident ~ ":" ~ rep1(rules) ^^ {
-    case name ~ _ ~ rules => State( name, rules )
+  def state = ident ~ ":" ~ onl ~ rep1sep(rules, nl) ^^ {
+    case name ~ _ ~ _ ~ rules => State( name, rules )
   }
 
   def rules =
