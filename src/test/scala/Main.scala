@@ -6,6 +6,11 @@ object Main extends App {
   val input =
     """
       |val a = 123
+      |/* asdf
+      | zxcv */
+      |val b = 456
+      |
+      |one => two
     """.stripMargin
   val highlighter =
     new Highlighter {
@@ -15,43 +20,25 @@ object Main extends App {
         """
           |definition
           |  name: asdf
+          |options
+          |  regex: dotall
           |templates
           |  default: << <\class\ "\escape\text"> >>
           |states
-          |  root: val  => keyword
-          |        \d+  => number
-          |        \w+  => ident
-          |        =    => symbol
+          |  root:
+          |    val   => keyword
+          |    \d+   => number
+          |    \w+   => ident
+          |    \=\>  => symbol
+          |    =     => symbol
+          |    /\*   => comment >comment
+          |  comment:
+          |    \*/   => comment ^
+          |    .     => comment
         """.stripMargin
       )
 
-//      /*   => comment >comment
-//comment: */  => comment ^
-//      .   => comment
-
       println( define )
-
-//      override def define: Definition =
-//        Definition(
-//          Seq(
-//            Templates(
-//              Map[String, String](
-//                "default" -> """<\class\ "\escape\text">"""
-//              )
-//            ),
-//            States(
-//              Seq(
-//                State( "root",
-//                  Seq(
-//                    MatchRule( "val", 'keyword ),
-//                    """\d+""" -> 'number,
-//                    """\w+""" -> 'ident
-//                  )
-//                )
-//              )
-//            )
-//          )
-//        )
     }
 
   println( highlighter.highlight(input) )

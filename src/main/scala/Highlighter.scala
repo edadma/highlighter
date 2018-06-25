@@ -167,6 +167,7 @@ abstract class Highlighter {
                     case None => sys.error( s"unknown state: $name" )
                     case Some( s ) => s
                   } )
+              case Pop => stack pop
             }
 
             highlight( if (info eq null) pos else info.end )
