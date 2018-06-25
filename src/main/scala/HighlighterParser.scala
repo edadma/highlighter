@@ -47,9 +47,14 @@ object HighlighterParser extends RegexParsers {
   def rules =
     matchRule
 
-  def matchRule = """.*(?==>)""".r ~ "=>" ~ ident ^^ {
-    case r ~ _ ~ t => MatchRule( r.trim, List(Match(t)) )
+  def matchRule = """.*(?==>)""".r ~ "=>" ~ rep1(action) ^^ {
+    case r ~ _ ~ a => MatchRule( r.trim, a )
   }
+
+  def action =
+    ident ^^ (t => Match( t )) |
+    ">" ~> ident ^^ Push |
+    "^" ^^^ Pop
 
 //  def groupsRule = """.*(?=\s*=>)""".r ~ "=>" ~ "(" ~ rep1(ident) ~ ")" ^^ {
 //    case r ~ _ ~ t => GroupRule( r, List(t) )

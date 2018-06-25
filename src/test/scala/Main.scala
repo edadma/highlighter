@@ -18,8 +18,14 @@ object Main extends App {
           |templates
           |  default: << <\class\ "\escape\text"> >>
           |states
-          |  root:
-          |    val => keyword
+          |  root: val  => keyword
+          |        \d+  => number
+          |        \w+  => ident
+          |        =    => symbol
+          |        /*   => comment >comment
+          |  comment: */  => comment ^
+          |           .   => comment
+          |
         """.stripMargin
       )
 //      override def define: Definition =

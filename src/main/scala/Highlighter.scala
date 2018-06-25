@@ -161,6 +161,12 @@ abstract class Highlighter {
             actions foreach {
               case Match( tok ) =>
                 output( code.substring(info.start, info.end), tok )
+              case action@Push( name ) =>
+                stack push action.state(
+                  states get name match {
+                    case None => sys.error( s"unknown state: $name" )
+                    case Some( s ) => s
+                  } )
             }
 
             highlight( if (info eq null) pos else info.end )
