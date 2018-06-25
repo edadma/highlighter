@@ -8,8 +8,14 @@ import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
 
 object HighlighterParser extends RegexParsers {
 
+  override val whiteSpace = """[ \t]+"""r
+
+  def nl = rep1("\n")
+
+  def onl = rep("\n")
+
   def definition =
-    rep1(section) ^^ Definition
+    onl ~> rep1(section) ^^ Definition
 
   def section =
     optionSection | infoSection | templateSection | stateSection
@@ -22,7 +28,7 @@ object HighlighterParser extends RegexParsers {
     "dotall" ^^^ Dotall
 
   def infoSection =
-    "definition" ~> rep1(infoItems) ^^ InfoItems
+    "definition" ~> nl ~> rep1sep(infoItems, nl) <~ onl ^^ InfoItems
 
   def infoItems =
     "name" ~> ":" ~> ident ^^ Name
@@ -30,7 +36,7 @@ object HighlighterParser extends RegexParsers {
   def ident = """[a-zA-Z]\w*"""r
 
   def templateSection =
-    "templates" ~> rep1(template) ^^ (ts => Templates( ts toMap ))
+    "templates" ~> nl ~> rep1sep(template, nl) <~ onl ^^ (ts => Templates( ts toMap ))
 
   def template =
     ident ~ ":" ~ "<<" ~ ".*(?=>>)".r ~ ">>" ^^ {
@@ -38,7 +44,7 @@ object HighlighterParser extends RegexParsers {
     }
 
   def stateSection =
-    "states" ~> rep1(state) ^^ States
+    "states" ~> nl ~> rep1(state) ^^ States
 
   def state = ident ~ ":" ~ rep1(rules) ^^ {
     case name ~ _ ~ rules => State( name, rules )
