@@ -21,16 +21,22 @@ object Main extends App {
           |  default: << <\class\ "\escape\text"> >>
           |states
           |  root:
-          |    [^<&]+     => text
           |    &\S*?;     => entity
           |    \<\!\[CDATA\[.*?\]\]\>     => preproc
           |    <!--      => comment >comment
           |    <\?.*?\?>  => preproc
           |    <![^>]*> => preproc
           |    (<)\s*(script)\s* => (punct tag) >script-content >tag
+          |    (<)\s*(style)\s* => (punct tag) >style-content >tag
+          |    (<)\s*([\w:.-]+) => (punct tag) >tag
+          |    (<)\s*(/)\s*([\w:.-]+)\s*(>) => (punct punct tag punct)
           |  comment:
           |    \*/   => comment ^
           |    .     => comment
+          |  tag:
+          |    ([\w:-]+)\s*(=)\s* => (attr oper)
+          |    [\w:-]+ => attr
+          |    (/?)\s*(>) => (punct punct) ^
         """.stripMargin
 //      """
 //        |definition

@@ -163,6 +163,9 @@ abstract class Highlighter {
             actions foreach {
               case Match( tok ) =>
                 output( code.substring(info.start, info.end), tok )
+              case Groups( toks ) =>
+                for ((t, i) <- toks zipWithIndex)
+                  output( code.substring(info.start(i + 1), info.end(i + 1)), t )
               case action@Push( name ) =>
                 stack push action.state(
                   states get name match {
