@@ -5,7 +5,19 @@ object Main extends App {
 
   val input =
     """
-      |<em>asdf</em>
+      |<!DOCTYPE html>
+      |<html>
+      |  <head>
+      |    <style>
+      |      body {background-color: powderblue;}
+      |      p    {color: red;}
+      |    </style>
+      |  </head>
+      |  <body>
+      |    <!-- comment -->
+      |    <p align="right">paragraph</p>
+      |  </body>
+      |</html>
     """.stripMargin
   val highlighter =
     new Highlighter {
@@ -31,33 +43,24 @@ object Main extends App {
           |    (<)\s*([\w:.-]+) => (punct tag) >tag
           |    (<)\s*(/)\s*([\w:.-]+)\s*(>) => (punct punct tag punct)
           |  comment:
-          |    \*/   => comment ^
-          |    .     => comment
+          |    [^-]+   => comment
+          |    -->   => comment ^
+          |    -   => comment
           |  tag:
-          |    ([\w:-]+)\s*(=)\s* => (attr oper)
+          |    ([\w:-]+)\s*(=)\s* => (attr oper) >attr
           |    [\w:-]+ => attr
           |    (/?)\s*(>) => (punct punct) ^
+          |  script-content:
+          |    (<)\s*(/)\s*(script)\s*(>) => (punct punct tag punct) ^
+          |    .+?(?=<\s*/\s*script\s*>) => using-javascript
+          |  style-content:
+          |    (<)\s*(/)\s*(style)\s*(>) => (punct punct tag punct) ^
+          |    .+?(?=<\s*/\s*style\s*>) => using-css
+          |  attr:
+          |    ".*?" => string ^
+          |    '.*?' => string ^
+          |    [^\s>]+ => string ^
         """.stripMargin
-//      """
-//        |definition
-//        |  name: HTML
-//        |options
-//        |  regex: dotall ignorecase
-//        |templates
-//        |  default: << <\class\ "\escape\text"> >>
-//        |states
-//        |  root:
-//        |    [^<&]+     => text
-//        |    &\S*?;     => entity
-//        |    \<\!\[CDATA\[.*?\]\]\>     => preproc
-//        |    <!--      => comment >comment
-//        |    <\?.*?\?>  => preproc
-//        |    <![^>]*> => preproc
-//        |    (<)\s*(script)\s* => (punct tag) >script-content >tag
-//        |  comment:
-//        |    \*/   => comment ^
-//        |    .     => comment
-//      """.stripMargin
       )
 
       println( define )
