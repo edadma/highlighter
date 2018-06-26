@@ -164,6 +164,8 @@ abstract class Highlighter {
               case Match( tok ) =>
                 output( code.substring(info.start, info.end), tok )
               case Groups( toks ) =>
+                if (toks.length != info.groupCount)
+                  sys.error( ) // put a Position in the Rule
                 for ((t, i) <- toks zipWithIndex)
                   output( code.substring(info.start(i + 1), info.end(i + 1)), t )
               case action@Push( name ) =>
