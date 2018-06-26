@@ -82,7 +82,11 @@ abstract class Highlighter {
       if (s nonEmpty) {
         dotrace( "output",  s""""$s", $clas""" )
 
-        val Token( cls, tmp ) = clas
+        val (cls, tmp) =
+          clas match {
+            case Token( "text", _ ) => ("text", "text")
+            case Token( c, t ) => (c, t)
+          }
 
         templates get tmp match {
           case None =>
