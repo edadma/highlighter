@@ -90,7 +90,7 @@ states
 </html>
 ```
 
-<pre>
+<div class="highlight highlight-text-html-basic"><pre>
 <!DOCTYPE html>
 <span class="pl-ent">html</span>>
   <span class="pl-ent">head</span>>
@@ -104,7 +104,7 @@ states
     <span class="pl-ent">p</span> <span class="pl-e">align</span><span class="pl-pds">"</span><span class="pl-s">right</span><span class="pl-pds">"</span>>paragraph<span class="pl-ent">p</span>
   <span class="pl-ent">body</span>
 <span class="pl-ent">html</span>
-</pre>
+</pre></div>
 
 ### Library
 
