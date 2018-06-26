@@ -90,6 +90,22 @@ states
 </html>
 ```
 
+<pre>
+<!DOCTYPE html>
+<span class="pl-ent">html</span>>
+  <span class="pl-ent">head</span>>
+    <span class="pl-ent">style</span>><span class="pl-s1">
+      body {background-color: powderblue;}
+      p    {color: red;}
+    </span><span class="pl-ent">style</span>
+  <span class="pl-ent">head</span>
+  <span class="pl-ent">body</span>>
+    <span class="pl-c">&lt;!-- comment --&gt;</span>
+    <span class="pl-ent">p</span> <span class="pl-e">align</span><span class="pl-pds">"</span><span class="pl-s">right</span><span class="pl-pds">"</span>>paragraph<span class="pl-ent">p</span>
+  <span class="pl-ent">body</span>
+<span class="pl-ent">html</span>
+</pre>
+
 ### Library
 
 This example program shows how to create a custom command to output an HTML unordered list, and also demonstrates a Highlighter `\for` loop.
