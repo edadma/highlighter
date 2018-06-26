@@ -5,55 +5,36 @@ object Main extends App {
 
   val input =
     """
-      |<!DOCTYPE html>
-      |<html>
-      |  <head>
-      |    <style>
-      |      body {background-color: powderblue;}
-      |      p    {color: red;}
-      |    </style>
-      |  </head>
-      |  <body>
-      |    <!-- comment -->
-      |    <p align="right">paragraph</p>
-      |  </body>
-      |</html>
-    """.stripMargin
+      |function asdf {
+      |  // doesn't do anything;
+      |}
+      |
+      |// comment
+      |
+      |function zxcv {
+      |  /* useless aswell; */
+      |  something stupid;
+      |}
+    """.trim.stripMargin
   val highlighter =
     new Highlighter {
       //trace = true
 
       def define = HighlighterParser(
         """
-          |definition
-          |  name: HTML
-          |options
-          |  regex: dotall ignorecase
           |templates
           |  default: << <span class="\class">\escape\text</span> >>
+          |includes
+          |  comments:
+          |    /\*.*?\*/ => comment
+          |    //.*?\n => comment
           |states
           |  root:
-          |    &\S*?;     => entity
-          |    <!--      => pl-c >comment
-          |    <\s*(script)\s* => (pl-ent) >script-content >tag
-          |    <\s*(style)\s* => (pl-ent) >style-content >tag
-          |    <\s*([\w:.-]+) => (pl-ent) >tag
-          |    <\s*/\s*([\w:.-]+)\s*> => (pl-ent)
-          |  comment:
-          |    [^-]+   => pl-c
-          |    -->   => pl-c ^
-          |    -   => pl-c
-          |  tag:
-          |    ([\w:-]+)\s*=\s* => (pl-e) >attr
-          |    [\w:-]+ => pl-e
-          |    /?\s*> => text ^
-          |  style-content:
-          |    <\s*/\s*(style)\s*> => (pl-ent) ^
-          |    .+?(?=<\s*/\s*style\s*>) => pl-s1
-          |  attr:
-          |    (")(.*?)(") => (pl-pds pl-s pl-pds) ^
-          |    (')(.*?)(') => (pl-pds pl-s pl-pds) ^
-          |    [^\s>]+ => string ^
+          |    include comments
+          |    (function)\s+(\w+)\s+(\{) => (keyword name keyword) >function
+          |  function:
+          |    include comments
+          |    \} => keyword ^
         """.stripMargin
       )
 

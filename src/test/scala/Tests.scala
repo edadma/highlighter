@@ -125,4 +125,37 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
       |<span class="punct">&lt;/</span><span class="tag">html</span><span class="punct">&gt;</span>
     """.stripMargin.trim
   }
+
+  "includes" in {
+    highlight(
+      """
+        |templates
+        |  default: << <span class="\class">\escape\text</span> >>
+        |includes
+        |  comments:
+        |    /\*.*?\*/ => comment
+        |    //.*?\n => comment
+        |states
+        |  root:
+        |    include comments
+        |    (function)\s+(\w+)\s+(\{) => (keyword name keyword) >function
+        |  function:
+        |    include comments
+        |    \} => keyword ^
+      """.stripMargin,
+      """
+        |function asdf {
+        |  // doesn't do anything;
+        |}
+        |
+        |// comment
+        |
+        |function zxcv {
+        |  /* useless aswell; */
+        |  something stupid;
+        |}
+      """.trim.stripMargin
+    )
+
+  }
 }

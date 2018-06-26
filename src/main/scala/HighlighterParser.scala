@@ -16,7 +16,7 @@ object HighlighterParser extends RegexParsers {
     onl ~> rep1(section) ^^ Definition
 
   def section =
-    optionSection | infoSection | templateSection | stateSection
+    optionSection | infoSection | templateSection | includeSection | stateSection
 
   def optionSection =
     "options" ~> nl ~> rep1(options) ^^ (o => Options( o.flatten ))
@@ -45,19 +45,27 @@ object HighlighterParser extends RegexParsers {
       case n ~ _ ~ _ ~ t ~ _ => (n, t.trim)
     }
 
+  def includeSection =
+    "includes" ~> nl ~> rep1(include) ^^ (includes => Includes( includes toMap ))
+
+  def include =
+    ident ~ ":" ~ onl ~ rep1(rules <~ onl) ^^ {
+      case name ~ _ ~ _ ~ rules => (name, rules)
+    }
+
   def stateSection =
     "states" ~> nl ~> rep1(state) ^^ States
 
   def state =
-    ident ~ ":" ~ onl ~ rep1(rules) ^^ {
+    ident ~ ":" ~ onl ~ rep1(rules <~ onl) ^^ {
       case name ~ _ ~ _ ~ rules => State( name, rules )
     }
 
   def rules =
-    matchRule
+    matchRule | includeRule
 
   def matchRule =
-    guard(not(ident ~ ":")) ~> ".*(?==>)".r ~ "=>" ~ rep1(action) <~ onl ^^ {
+    guard(not(ident ~ ":")) ~> ".*(?==>)".r ~ "=>" ~ rep1(action) ^^ {
       case r ~ _ ~ a => MatchRule( r.trim, a )
     }
 
@@ -67,9 +75,8 @@ object HighlighterParser extends RegexParsers {
     ">" ~> ident ^^ Push |
     "^" ^^^ Pop
 
-//  def groupsRule = """.*(?=\s*=>)""".r ~ "=>" ~ "(" ~ rep1(ident) ~ ")" ^^ {
-//    case r ~ _ ~ t => GroupRule( r, List(t) )
-//  }
+  def includeRule =
+    "include" ~> ident ^^ IncludeRule
 
   def apply( input: String ): Definition = parseAll( definition, input ) match {
     case Success( result, _ ) => result
