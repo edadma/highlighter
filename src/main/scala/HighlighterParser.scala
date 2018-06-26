@@ -1,9 +1,7 @@
 //@
 package xyz.hyperreal.highlighter
 
-import java.util.regex.{MatchResult, Pattern}
-
-import scala.util.parsing.combinator.{PackratParsers, RegexParsers}
+import scala.util.parsing.combinator.RegexParsers
 
 
 object HighlighterParser extends RegexParsers {
@@ -37,7 +35,7 @@ object HighlighterParser extends RegexParsers {
   def infoItems =
     "name" ~> ":" ~> ident <~ onl ^^ Name
 
-  def ident = """[a-zA-Z]\w*"""r
+  def ident = """[a-zA-Z][\w-]*"""r
 
   def templateSection =
     "templates" ~> nl ~> rep1(template) ^^ (ts => Templates( ts toMap ))
@@ -50,20 +48,22 @@ object HighlighterParser extends RegexParsers {
   def stateSection =
     "states" ~> nl ~> rep1(state) ^^ States
 
-  def state = ident ~ ":" ~ onl ~ rep1(rules) ^^ {
-    case name ~ _ ~ _ ~ rules => State( name, rules )
-  }
+  def state =
+    ident ~ ":" ~ onl ~ rep1(rules) ^^ {
+      case name ~ _ ~ _ ~ rules => State( name, rules )
+    }
 
   def rules =
     matchRule
 
   def matchRule =
     guard(not(ident ~ ":")) ~> ".*(?==>)".r ~ "=>" ~ rep1(action) <~ onl ^^ {
-    case r ~ _ ~ a => MatchRule( r.trim, a )
-  }
+      case r ~ _ ~ a => MatchRule( r.trim, a )
+    }
 
   def action =
     ident ^^ (t => Match( t )) |
+    "(" ~> rep1(ident) <~ ")" ^^ (ts => Groups( ts )) |
     ">" ~> ident ^^ Push |
     "^" ^^^ Pop
 

@@ -5,11 +5,7 @@ object Main extends App {
 
   val input =
     """
-      |val a = 123
-      |/* asdf
-      | zxcv */
-      |val b = 456 // this is a comment
-      |val c = 789
+      |<em>asdf</em>
     """.stripMargin
   val highlighter =
     new Highlighter {

@@ -54,6 +54,8 @@ package object highlighter {
 //  implicit def symbol2include( include: Symbol ) = null.asInstanceOf[Regex] -> IncludeRules( include.name )
   implicit def symbols2tokens( tokens: Seq[Symbol] ) = tokens map (s => Token( s.name ))
 
+  implicit def strings2tokens( tokens: Seq[String] ) = tokens map (s => Token( s ))
+
   implicit def string2state( state: String ) = Push( state )
 
 //  implicit def string2pattern( regex: String ) = Pattern.compile( regex )
