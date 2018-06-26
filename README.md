@@ -14,63 +14,80 @@ Examples
 
 Here's a typical Highlighter definition.  This is a port of the [Pygments HTML Lexer](https://bitbucket.org/birkenfeld/pygments-main/src/default/pygments/lexers/html.py) without CSS and JavaScript highlighting.
 
-#### Template
+### Definition
 
-```html
-<h3>Products</h3>
-
-<ul>
-  \for products {
-    <li>\name&emsp;$\price&emsp;
-      \if inStock {
-        <a href="#">Buy It!</a>
-      } \else {
-        Out of stock.
-      }
-    </li>
-  }
-</ul>
+```
+definition
+  name: HTML
+options
+  regex: dotall ignorecase
+templates
+  default: << <span class="\class">\escape\text</span> >>
+states
+  root:
+    &\S*?;     => entity
+    \<\!\[CDATA\[.*?\]\]\>     => preproc
+    <!--      => comment >comment
+    <\?.*?\?>  => preproc
+    <![^>]*> => preproc
+    (<)\s*(script)\s* => (punct tag) >script-content >tag
+    (<)\s*(style)\s* => (punct tag) >style-content >tag
+    (<)\s*([\w:.-]+) => (punct tag) >tag
+    (<)\s*(/)\s*([\w:.-]+)\s*(>) => (punct punct tag punct)
+  comment:
+    [^-]+   => comment
+    -->   => comment ^
+    -   => comment
+  tag:
+    ([\w:-]+)\s*(=)\s* => (attr oper) >attr
+    [\w:-]+ => attr
+    (/?)\s*(>) => (punct punct) ^
+  script-content:
+    (<)\s*(/)\s*(script)\s*(>) => (punct punct tag punct) ^
+    .+?(?=<\s*/\s*script\s*>) => using-javascript
+  style-content:
+    (<)\s*(/)\s*(style)\s*(>) => (punct punct tag punct) ^
+    .+?(?=<\s*/\s*style\s*>) => using-css
+  attr:
+    ".*?" => string ^
+    '.*?' => string ^
+    [^\s>]+ => string ^
 ```
 
-#### Data
+### Input
 
-```json
-{
-  "products": [
-    {
-      "name": "RCA 32\u2033 ROKU SMART TV",
-      "price": 207.00,
-      "inStock": true
-    },
-    {
-      "name": "LG 55UK6300",
-      "price": 1098.00,
-      "inStock": false
-    }
-  ]
-}
+```
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {background-color: powderblue;}
+      p    {color: red;}
+    </style>
+  </head>
+  <body>
+    <!-- comment -->
+    <p align="right">paragraph</p>
+  </body>
+</html>
 ```
 
-#### Output
+### Output
 
 ```html
-<h3>Products</h3>
-
-<ul>
-
-    <li>RCA 32″ ROKU SMART TV&emsp; $207.00&emsp;
-
-        <a href="#">Buy It!</a>
-
-    </li>
-
-    <li>LG 55UK6300&emsp; $1098.00&emsp;
-
-        Out of stock.
-
-    </li>
-
-</ul>
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {background-color: powderblue;}
+      p    {color: red;}
+    </style>
+  </head>
+  <body>
+    <!-- comment -->
+    <p align="right">paragraph</p>
+  </body>
+</html>
 ```
 
 ### Library
