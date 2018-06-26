@@ -62,7 +62,7 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
         |options
         |  regex: dotall ignorecase
         |templates
-        |  default: << <\class\ "\escape\text"> >>
+        |  default: << <span class="\class">\escape\text</span> >>
         |states
         |  root:
         |    &\S*?;     => entity
@@ -79,7 +79,7 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
         |    -->   => comment ^
         |    -   => comment
         |  tag:
-        |    ([\w:-]+)\s*(=)\s* => (attr oper) attr
+        |    ([\w:-]+)\s*(=)\s* => (attr oper) >attr
         |    [\w:-]+ => attr
         |    (/?)\s*(>) => (punct punct) ^
         |  script-content:
@@ -103,14 +103,26 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
         |    </style>
         |  </head>
         |  <body>
-        |  <-- comment -->
-        |  <p align="right">paragraph</p>
+        |    <!-- comment -->
+        |    <p align="right">paragraph</p>
         |  </body>
         |</html>
       """.stripMargin
     ).trim shouldBe
     """
-      |
+      |<span class="preproc">&lt;!DOCTYPE html&gt;</span>
+      |<span class="punct">&lt;</span><span class="tag">html</span><span class="punct">&gt;</span>
+      |  <span class="punct">&lt;</span><span class="tag">head</span><span class="punct">&gt;</span>
+      |    <span class="punct">&lt;</span><span class="tag">style</span><span class="punct">&gt;</span><span class="using-css">
+      |      body {background-color: powderblue;}
+      |      p    {color: red;}
+      |    </span><span class="punct">&lt;/</span><span class="tag">style</span><span class="punct">&gt;</span>
+      |  <span class="punct">&lt;/</span><span class="tag">head</span><span class="punct">&gt;</span>
+      |  <span class="punct">&lt;</span><span class="tag">body</span><span class="punct">&gt;</span>
+      |    <span class="comment">&lt;!-- comment --&gt;</span>
+      |    <span class="punct">&lt;</span><span class="tag">p</span> <span class="attr">align</span><span class="oper">=</span><span class="string">"right"</span><span class="punct">&gt;</span>paragraph<span class="punct">&lt;/</span><span class="tag">p</span><span class="punct">&gt;</span>
+      |  <span class="punct">&lt;/</span><span class="tag">body</span><span class="punct">&gt;</span>
+      |<span class="punct">&lt;/</span><span class="tag">html</span><span class="punct">&gt;</span>
     """.stripMargin.trim
   }
 }

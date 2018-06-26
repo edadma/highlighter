@@ -30,7 +30,7 @@ object Main extends App {
           |options
           |  regex: dotall ignorecase
           |templates
-          |  default: << <\class\ "\escape\text"> >>
+          |  default: << <span class="\class">\escape\text</span> >>
           |states
           |  root:
           |    &\S*?;     => entity
