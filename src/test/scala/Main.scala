@@ -18,9 +18,9 @@ object Main extends App {
       def define = HighlighterParser(
         """
           |definition
-          |  name: asdf
+          |  name: HTML
           |options
-          |  regex: dotall multiline
+          |  regex: dotall ignorecase
           |templates
           |  default: << <\class\ "\escape\text"> >>
           |states
@@ -30,7 +30,7 @@ object Main extends App {
           |    \w+     => ident
           |    =       => symbol
           |    /\*     => comment >comment
-          |    //.*?$  => comment
+          |    //.*?$  => text
           |  comment:
           |    \*/   => comment ^
           |    .     => comment
