@@ -22,12 +22,14 @@ object Main extends App {
 
       def define = HighlighterParser(
         """
+          |options
+          |  regex: multiline
           |templates
           |  default: << <span class="\class">\escape\text</span> >>
           |includes
           |  comments:
           |    /\*.*?\*/ => comment
-          |    //.*?\n => comment
+          |    //.*?$ => comment
           |states
           |  root:
           |    include comments

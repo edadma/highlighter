@@ -129,12 +129,14 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
   "includes" in {
     highlight(
       """
+        |options
+        |  regex: multiline
         |templates
         |  default: << <span class="\class">\escape\text</span> >>
         |includes
         |  comments:
         |    /\*.*?\*/ => comment
-        |    //.*?\n => comment
+        |    //.*?$ => comment
         |states
         |  root:
         |    include comments
@@ -155,7 +157,19 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
         |  something stupid;
         |}
       """.trim.stripMargin
-    )
+    ).trim shouldBe
+      """
+        |<span class="keyword">function</span><span class="name">asdf</span><span class="keyword">{</span>
+        |  <span class="comment">// doesn't do anything;</span>
+        |<span class="keyword">}</span>
+        |
+        |<span class="comment">// comment</span>
+        |
+        |<span class="keyword">function</span><span class="name">zxcv</span><span class="keyword">{</span>
+        |  <span class="comment">/* useless aswell; */</span>
+        |  something stupid;
+        |<span class="keyword">}</span>
+      """.stripMargin.trim
 
   }
 }
