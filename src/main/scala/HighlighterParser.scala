@@ -2,6 +2,7 @@
 package xyz.hyperreal.highlighter
 
 import scala.util.parsing.combinator.RegexParsers
+import scala.util.parsing.input.{PagedSeq, PagedSeqReader}
 
 
 object HighlighterParser extends RegexParsers {
@@ -82,9 +83,12 @@ object HighlighterParser extends RegexParsers {
   def includeRule =
     "include" ~> ident ^^ IncludeRule
 
-  def apply( input: String ): Definition = parseAll( definition, input ) match {
-    case Success( result, _ ) => result
-    case failure : NoSuccess => scala.sys.error( failure.msg )
-  }
+  def apply( input: io.Source ): Definition =
+    parseAll( definition, new PagedSeqReader(PagedSeq.fromSource(input)) ) match {
+      case Success( result, _ ) => result
+      case Error( msg, next ) => sys.error( next.pos.longString )
+    }
+
+  def apply( input: String ): Definition = apply( io.Source.fromString(input) )
 
 }
