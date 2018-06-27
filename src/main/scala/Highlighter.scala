@@ -187,7 +187,14 @@ abstract class Highlighter {
     highlight( 0 )
     flush
 
-    if (trace) "" else result.toString
+    if (trace)
+      ""
+    else {
+      templates get "format" match {
+        case None => result.toString
+        case Some( t ) => renderer.capture( t, Map("content" -> result.toString) )
+      }
+    }
   }
 
 }

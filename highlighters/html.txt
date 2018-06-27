@@ -4,6 +4,14 @@ options
   regex: dotall ignorecase
 templates
   default: << <span class="\class">\escape\text</span> >>
+  format: <<
+    <!DOCTYPE html>
+    <html>
+        <body>
+            <pre>\content</pre>
+        </body>
+    </html>
+    >>
 states
   root:
     &\S*?;                       => entity

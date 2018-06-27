@@ -42,7 +42,7 @@ object HighlighterParser extends RegexParsers {
     "templates" ~> nl ~> rep1(template) ^^ (ts => Templates( ts toMap ))
 
   def template =
-    ident ~ ":" ~ "<<" ~ ".*(?=>>)".r ~ ">>" <~ onl ^^ {
+    ident ~ ":" ~ "<<" ~ """(?:.|\n)*(?=>>)""".r ~ ">>" <~ onl ^^ {
       case n ~ _ ~ _ ~ t ~ _ => (n, t.trim)
     }
 
