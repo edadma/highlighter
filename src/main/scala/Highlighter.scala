@@ -190,7 +190,7 @@ abstract class Highlighter {
     if (trace)
       ""
     else {
-      templates get "format" match {
+      templates get "layout" match {
         case None => result.toString
         case Some( t ) => renderer.capture( t, Map("content" -> result.toString) )
       }

@@ -37,6 +37,8 @@ object Main extends App {
           |  function:
           |    include comments
           |    \} => keyword ^
+          |classes
+          |  keyword: kw
         """.stripMargin
       )
 

@@ -4,11 +4,14 @@ options
   regex: dotall ignorecase
 templates
   default: << <span class="\class">\escape\text</span> >>
-  format: <<
+  layout: <<
     <!DOCTYPE html>
     <html>
+        <head>
+            <link rel="stylesheet" type="text/css" href="monokai.css">
+        </head>
         <body>
-            <pre>\content</pre>
+            <div class="monokai"><pre>\content</pre></div>
         </body>
     </html>
     >>
@@ -41,3 +44,10 @@ states
     ".*?"   => string ^
     '.*?'   => string ^
     [^\s>]+ => string ^
+classes
+  entity: ni
+  oper: o
+  preproc: cp
+  punct: p
+  tag: nt
+  string: s

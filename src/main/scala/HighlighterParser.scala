@@ -17,7 +17,7 @@ object HighlighterParser extends RegexParsers {
     onl ~> rep1(section) ^^ Definition
 
   def section =
-    optionSection | infoSection | templateSection | includeSection | stateSection
+    optionSection | infoSection | templateSection | includeSection | stateSection | classesSection
 
   def optionSection =
     "options" ~> nl ~> rep1(options) ^^ (o => Options( o.flatten ))
@@ -42,7 +42,7 @@ object HighlighterParser extends RegexParsers {
     "templates" ~> nl ~> rep1(template) ^^ (ts => Templates( ts toMap ))
 
   def template =
-    ident ~ ":" ~ "<<" ~ """(?:.|\n)*(?=>>)""".r ~ ">>" <~ onl ^^ {
+    ident ~ ":" ~ "<<" ~ """(?:.|\n)*?(?=>>)""".r ~ ">>" <~ onl ^^ {
       case n ~ _ ~ _ ~ t ~ _ => (n, t.trim)
     }
 
@@ -82,6 +82,14 @@ object HighlighterParser extends RegexParsers {
 
   def includeRule =
     "include" ~> ident ^^ IncludeRule
+
+  def classesSection =
+    "classes" ~> nl ~> rep1(mapping <~ onl) ^^ (ms => Classes( ms toMap ))
+
+  def mapping =
+    ident ~ ":" ~ ident ^^ {
+      case c1 ~ _ ~ c2 => (c1, c2)
+    }
 
   def apply( input: io.Source ): Definition =
     parseAll( definition, new PagedSeqReader(PagedSeq.fromSource(input)) ) match {
