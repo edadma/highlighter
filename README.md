@@ -17,7 +17,7 @@ Here's a typical Highlighter definition.  This is a port of the [Pygments HTML L
 ### Definition
 
 ```
-definition
+highlighter
   name: HTML
 options
   regex: dotall ignorecase

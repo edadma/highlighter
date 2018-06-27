@@ -19,7 +19,7 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
 	"basics" in {
     highlight(
       """
-        |definition
+        |highlighter
         |  name: basics
         |options
         |  regex: dotall multiline
@@ -57,7 +57,7 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
   "html" in {
     highlight(
       """
-        |definition
+        |highlighter
         |  name: HTML
         |options
         |  regex: dotall ignorecase
@@ -65,32 +65,32 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
         |  default: << <span class="\class">\escape\text</span> >>
         |states
         |  root:
-        |    &\S*?;     => entity
-        |    \<\!\[CDATA\[.*?\]\]\>     => preproc
-        |    <!--      => comment >comment
-        |    <\?.*?\?>  => preproc
-        |    <![^>]*> => preproc
-        |    (<)\s*(script)\s* => (punct tag) >script-content >tag
-        |    (<)\s*(style)\s* => (punct tag) >style-content >tag
-        |    (<)\s*([\w:.-]+) => (punct tag) >tag
+        |    &\S*?;                       => entity
+        |    \<\!\[CDATA\[.*?\]\]\>       => preproc
+        |    <!--                         => comment >comment
+        |    <\?.*?\?>                    => preproc
+        |    <![^>]*>                     => preproc
+        |    (<)\s*(script)\s*            => (punct tag) >script-content >tag
+        |    (<)\s*(style)\s*             => (punct tag) >style-content >tag
+        |    (<)\s*([\w:.-]+)             => (punct tag) >tag
         |    (<)\s*(/)\s*([\w:.-]+)\s*(>) => (punct punct tag punct)
         |  comment:
-        |    [^-]+   => comment
+        |    [^-]+ => comment
         |    -->   => comment ^
-        |    -   => comment
+        |    -     => comment
         |  tag:
         |    ([\w:-]+)\s*(=)\s* => (attr oper) >attr
-        |    [\w:-]+ => attr
-        |    (/?)\s*(>) => (punct punct) ^
+        |    [\w:-]+            => attr
+        |    (/?)\s*(>)         => (punct punct) ^
         |  script-content:
         |    (<)\s*(/)\s*(script)\s*(>) => (punct punct tag punct) ^
-        |    .+?(?=<\s*/\s*script\s*>) => using-javascript
+        |    .+?(?=<\s*/\s*script\s*>)  => using-javascript
         |  style-content:
         |    (<)\s*(/)\s*(style)\s*(>) => (punct punct tag punct) ^
-        |    .+?(?=<\s*/\s*style\s*>) => using-css
+        |    .+?(?=<\s*/\s*style\s*>)  => using-css
         |  attr:
-        |    ".*?" => string ^
-        |    '.*?' => string ^
+        |    ".*?"   => string ^
+        |    '.*?'   => string ^
         |    [^\s>]+ => string ^
       """.stripMargin,
       """

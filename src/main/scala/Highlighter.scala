@@ -63,6 +63,8 @@ abstract class Highlighter {
     )
   val renderer = new Renderer( parser, config )
 
+  def highlight( code: io.Source ): String = highlight( code mkString )
+
   def highlight( code: String ) = {
 
     val stack =

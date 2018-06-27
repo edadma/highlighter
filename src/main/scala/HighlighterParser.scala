@@ -31,7 +31,7 @@ object HighlighterParser extends RegexParsers {
     "multiline" ^^^ Multiline
 
   def infoSection =
-    "definition" ~> nl ~> rep1(infoItems) ^^ InfoItems
+    "highlighter" ~> nl ~> rep1(infoItems) ^^ InfoItems
 
   def infoItems =
     "name" ~> ":" ~> ident <~ onl ^^ Name
