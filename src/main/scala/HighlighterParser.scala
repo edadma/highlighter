@@ -70,10 +70,14 @@ object HighlighterParser extends RegexParsers {
     }
 
   def action =
-    ident ^^ (t => Match( t )) |
-    "(" ~> rep1(ident) <~ ")" ^^ (ts => Groups( ts )) |
+    token ^^ Match |
+    "(" ~> rep1(token) <~ ")" ^^ Groups |
     ">" ~> ident ^^ Push |
     "^" ^^^ Pop
+
+  def token =
+    ident ~ "/" ~ ident ^^ { case c ~ _ ~ t => Token( c, t ) } |
+    ident ^^ (c => Token( c, "default" ))
 
   def includeRule =
     "include" ~> ident ^^ IncludeRule
