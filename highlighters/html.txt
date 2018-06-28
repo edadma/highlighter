@@ -8,10 +8,10 @@ templates
     <!DOCTYPE html>
     <html>
         <head>
-            <link rel="stylesheet" type="text/css" href="monokai.css">
+            <link rel="stylesheet" type="text/css" href="native.css">
         </head>
         <body>
-            <div class="monokai"><pre>\content</pre></div>
+            <div class="native"><pre>\content</pre></div>
         </body>
     </html>
     >>
@@ -51,3 +51,5 @@ classes
   punct: p
   tag: nt
   string: s
+  attr: na
+  comment: cm
