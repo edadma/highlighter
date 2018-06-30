@@ -4,37 +4,6 @@ options
   regex: dotall ignorecase
 templates
   default: {{ <span class="\class">\escape\text</span> }}
-  layout: {{ \delim \ [ ]
-    \set entity [rgb(104, 175, 133)]
-    \set tag [rgb(107, 168, 175)]
-    \set string [rgb(207, 96, 54)]
-    \set lum 10
-    <html>
-        <head>
-            <title>HTML highlighting example</title>
-            <style>
-                .container { width: 980px; margin-right: auto; margin-left: auto; }
-                article { padding: 45px; }
-                code { font-family: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace; }
-                .highlight { padding: 16px; background: #272822; color: rgb(180, 180, 180); }
-                .highlight  { background: #272822; color: rgb(180, 180, 180); }
-                .highlight .entitydelim { color: \lighten\lum\entity; }
-                .highlight .entity { color: \entity; }
-                .highlight .preproc { color: #75715e }
-                .highlight .comment { color: rgb(69, 64, 100); }
-                .highlight .tagdelim { color: \lighten\lum\tag; }
-                .highlight .tag { color: \tag; }
-                .highlight .attr { color: rgb(228, 63, 193); }
-                .highlight .oper { color: rgb(238, 171, 106); }
-                .highlight .stringdelim { color: \lighten\lum\string; }
-                .highlight .string { color: \string; }
-            </style>
-        </head>
-        <body>
-            <div class="container"><article><pre class="highlight"><code>\content</code></pre></article></div>
-        </body>
-    </html>
-    }}
 states
   root:
     (&)(\S*?)(;)                 => (entitydelim entity entitydelim)

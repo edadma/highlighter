@@ -5,16 +5,7 @@ object Main extends App {
 
   val input =
     """
-      |function asdf {
-      |  // doesn't do anything;
-      |}
-      |
-      |// comment
-      |
-      |function zxcv {
-      |  /* useless aswell; */
-      |  something stupid;
-      |}
+      |testing testing...
     """.trim.stripMargin
   val highlighter =
     new Highlighter {
@@ -25,20 +16,10 @@ object Main extends App {
           |options
           |  regex: multiline
           |templates
-          |  default: << <span class="\class">\escape\text</span> >>
-          |includes
-          |  comments:
-          |    /\*.*?\*/ => comment
-          |    //.*?$ => comment
+          |  default: {{ <span class="\class">\escape\text</span> }}
           |states
           |  root:
-          |    include comments
-          |    (function)\s+(\w+)\s+(\{) => (keyword name keyword) >function
-          |  function:
-          |    include comments
-          |    \} => keyword ^
-          |classes
-          |  keyword: kw
+          |    {{words( ['else', 'elseif'] )}} => keyword
         """.stripMargin
       )
 
