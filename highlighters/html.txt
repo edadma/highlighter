@@ -13,8 +13,8 @@ templates
         <head>
             <title>HTML highlighting example</title>
             <style>
-                .highlight .hll { background-color: rgb(16, 9, 14); }
-                .highlight  { background: #272822; color: rgb(165, 119, 152); }
+                .highlight { padding: 16px; background: #272822; color: rgb(180, 180, 180); }
+                .highlight  { background: #272822; color: rgb(180, 180, 180); }
                 .highlight .entitydelim { color: \lighten\lum\entity; }
                 .highlight .entity { color: \entity; }
                 .highlight .preproc { color: #75715e }
@@ -28,7 +28,7 @@ templates
             </style>
         </head>
         <body>
-            <div class="highlight"><pre>\content</pre></div>
+            <div><pre class="highlight">\content</pre></div>
         </body>
     </html>
     >>
