@@ -42,8 +42,8 @@ object HighlighterParser extends RegexParsers {
     "templates" ~> nl ~> rep1(template) ^^ (ts => Templates( ts toMap ))
 
   def template =
-    ident ~ ":" ~ "<<" ~ """(?:.|\n)*?(?=>>)""".r ~ ">>" <~ onl ^^ {
-      case n ~ _ ~ _ ~ t ~ _ => (n, t.trim)
+    ident ~ ":" ~ "{{" ~ rep(guard(not("}}")) ~> elem("", ch => true)) ~ "}}" <~ onl ^^ {
+      case n ~ _ ~ _ ~ t ~ _ => (n, t.mkString.trim)
     }
 
   def includeSection =

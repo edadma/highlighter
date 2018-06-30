@@ -24,7 +24,7 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
         |options
         |  regex: dotall multiline
         |templates
-        |  default: << <\class\ "\escape\text"> >>
+        |  default: {{ <\class\ "\escape\text"> }}
         |states
         |  root:
         |    val     => keyword
@@ -62,7 +62,7 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
         |options
         |  regex: dotall ignorecase
         |templates
-        |  default: << <span class="\class">\escape\text</span> >>
+        |  default: {{ <span class="\class">\escape\text</span> }}
         |states
         |  root:
         |    &\S*?;                       => entity
@@ -132,7 +132,7 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
         |options
         |  regex: multiline
         |templates
-        |  default: << <span class="\class">\escape\text</span> >>
+        |  default: {{ <span class="\class">\escape\text</span> }}
         |includes
         |  comments:
         |    /\*.*?\*/ => comment
