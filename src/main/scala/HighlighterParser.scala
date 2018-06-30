@@ -81,9 +81,9 @@ object HighlighterParser extends RegexParsers {
       case ListRAST( l ) => l map eval
       case LiteralRAST( v ) => v
       case Variable( v ) => vars(v)
-      case FunctionRAST( "words", args ) =>
-        args map eval map (_.toString) sortWith (_.length > _.length) map Pattern.quote mkString ("(?:", "|", ")")
-      case FunctionRAST( f, _ ) => sys.error( s"unknown function: $f" )
+      case FunctionRAST( "words", List(words: RAST) ) =>
+        eval( words ).asInstanceOf[List[_]] map (_.toString) sortWith (_.length > _.length) map Pattern.quote mkString ("(?:", "|", ")")
+      case FunctionRAST( f, args ) => sys.error( s"unknown function: $f, $args" )
     }
 
   trait RAST
@@ -97,7 +97,7 @@ object HighlighterParser extends RegexParsers {
     rep1(guard(not("=>")) ~> segment) ^^ (segments => segments map eval map (_.toString) mkString)
 
   def segment =
-    guard(not("{{")) ~> """.*(?==>|\{\{)""".r ^^ StaticRAST |
+    guard(not("{{")) ~> """.*?(?==>|\{\{)""".r ^^ StaticRAST |
     "{{" ~> code <~ "}}"
 
   def code: Parser[RAST] =

@@ -5,7 +5,7 @@ object Main extends App {
 
   val input =
     """
-      |testing testing...
+      |testing [else]...
     """.trim.stripMargin
   val highlighter =
     new Highlighter {
@@ -19,7 +19,7 @@ object Main extends App {
           |  default: {{ <span class="\class">\escape\text</span> }}
           |states
           |  root:
-          |    {{words( ['else', 'elseif'] )}} => keyword
+          |    \[{{words( ['else', 'elseif'] )}}\] => keyword
         """.stripMargin
       )
 
