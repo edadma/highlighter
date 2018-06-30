@@ -14,13 +14,14 @@ abstract class Highlighter {
 
   var trace = false
   val parser = new Parser( Command.standard )
-  val (flags, name, templates, states, classes, includes) = {
+  val (flags, name, templates, states, classes, includes, equates) = {
     var _flags = 0
     var _name: String = getClass.getName
     var _templates: Map[String, AST] = null
     var _states: Map[String, State] = null
     var _classes: Map[String, String] = Map()
     var _includes: Map[String, Seq[Rule]] = Map()
+    var _equates: Map[String, RAST] = Map()
 
     define match {
       case Definition( sections ) =>
@@ -39,6 +40,7 @@ abstract class Highlighter {
           case States( states ) => _states = states map (s => (s.name, s)) toMap
           case Includes( includes ) => _includes = includes
           case Classes( classes ) => _classes = classes
+          case Equates( equates ) => _equates = equates
         }
     }
 
@@ -54,7 +56,7 @@ abstract class Highlighter {
     if (!_states.contains( "root" ))
       sys.error( "missing root state" )
 
-    (_flags, _name, _templates, _states, _classes, _includes) }
+    (_flags, _name, _templates, _states, _classes, _includes, _equates) }
   val config =
     Map(
       "today" -> "MMMM d, y",
@@ -62,6 +64,17 @@ abstract class Highlighter {
       "rounding" -> "HALF_EVEN"
     )
   val renderer = new Renderer( parser, config )
+
+  def eval( s: RAST ): Any =
+    s match {
+      case StaticRAST( s ) => s
+      case ListRAST( l ) => l map eval
+      case LiteralRAST( v ) => v
+      case Variable( v ) => eval(equates(v))
+      case FunctionRAST( "words", List(words: RAST) ) =>
+        eval( words ).asInstanceOf[List[_]] map (_.toString) sortWith (_.length > _.length) map Pattern.quote mkString ("(?:", "|", ")")
+      case FunctionRAST( f, args ) => sys.error( s"unknown function: $f, $args" )
+    }
 
   def highlight( code: io.Source ): String = highlight( code mkString )
 

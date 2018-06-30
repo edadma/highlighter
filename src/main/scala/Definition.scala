@@ -14,6 +14,7 @@ case class Templates( templates: Map[String, AST] ) extends Section
 case class States( states: Seq[State] ) extends Section
 case class Includes( includes: Map[String, Seq[Rule]] ) extends Section
 case class Classes( classes: Map[String, String] ) extends Section
+case class Equates( equates: Map[String, RAST] ) extends Section
 
 trait InfoItem
 case class Name( s: String ) extends InfoItem
@@ -26,8 +27,8 @@ case object Dotall extends LexerOption
 case object Multiline extends LexerOption
 
 trait Rule
-case class MatchRule( regex: String, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
-case class MismatchRule( regex: String, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
+case class MatchRule( regex: List[RAST], actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
+case class MismatchRule( regex: List[RAST], actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
 case class DefaultRule( actions: Seq[Action] ) extends Rule
 case class IncludeRule( include: String ) extends Rule { val rules = new Const[Seq[Rule]] }
 

@@ -12,7 +12,7 @@ object HighlighterParser extends RegexParsers {
 
   override val whiteSpace = """[ \t]+"""r
 
-  val vars = new mutable.HashMap[String, Any]
+  val equates = new mutable.HashMap[String, RAST]
 
   def nl = rep1("\n")
 
@@ -22,7 +22,7 @@ object HighlighterParser extends RegexParsers {
     onl ~> rep1(section) ^^ Definition
 
   def section =
-    optionSection | infoSection | templateSection | includeSection | stateSection | classesSection
+    optionSection | infoSection | templateSection | includeSection | stateSection | classesSection | equatesSection
 
   def optionSection =
     "options" ~> nl ~> rep1(options) ^^ (o => Options( o.flatten ))
@@ -72,29 +72,11 @@ object HighlighterParser extends RegexParsers {
 
   def matchRule =
     guard(not(ident ~ ":")) ~> pattern ~ "=>" ~ rep1(action) ^^ {
-      case r ~ _ ~ a => MatchRule( r.trim, a )
+      case r ~ _ ~ a => MatchRule( r, a )
     }
-
-  def eval( s: RAST ): Any =
-    s match {
-      case StaticRAST( s ) => s
-      case ListRAST( l ) => l map eval
-      case LiteralRAST( v ) => v
-      case Variable( v ) => vars(v)
-      case FunctionRAST( "words", List(words: RAST) ) =>
-        eval( words ).asInstanceOf[List[_]] map (_.toString) sortWith (_.length > _.length) map Pattern.quote mkString ("(?:", "|", ")")
-      case FunctionRAST( f, args ) => sys.error( s"unknown function: $f, $args" )
-    }
-
-  trait RAST
-  case class StaticRAST( s: String ) extends RAST
-  case class LiteralRAST( v: Any ) extends RAST
-  case class FunctionRAST( f: String, args: List[RAST] ) extends RAST
-  case class ListRAST( l: List[RAST] ) extends RAST
-  case class Variable( v: String ) extends RAST
 
   def pattern =
-    rep1(guard(not("=>")) ~> segment) ^^ (segments => segments map eval map (_.toString) mkString)
+    rep1(guard(not("=>")) ~> segment)
 
   def segment =
     guard(not("{{")) ~> """.*?(?==>|\{\{)""".r ^^ StaticRAST |
@@ -131,6 +113,14 @@ object HighlighterParser extends RegexParsers {
   def mapping =
     ident ~ ":" ~ ident ^^ {
       case c1 ~ _ ~ c2 => (c1, c2)
+    }
+
+  def equatesSection =
+    "equates" ~> nl ~> rep1(equate <~ onl) ^^ (ms => Equates( ms toMap ))
+
+  def equate =
+    ident ~ "=" ~ code ^^ {
+      case e ~ _ ~ c => (e, c)
     }
 
   def apply( input: io.Source ): Definition =
