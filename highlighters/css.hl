@@ -1,4 +1,12 @@
+highlighter
+  name: css
+templates
+  default: {{ <\class\ "\escape\text"> }}
 equates
+  _vendor_prefixes = [
+    '-ms-', 'mso-', '-moz-', '-o-', '-xv-', '-atsc-', '-wap-', '-khtml-',
+    '-webkit-', 'prince-', '-ah-', '-hp-', '-ro-', '-rim-', '-tc-'
+    ]
   _css_properties = [
     'align-content', 'align-items', 'align-self', 'alignment-baseline', 'all',
     'animation', 'animation-delay', 'animation-direction',
@@ -189,7 +197,7 @@ equates
     'mix', 'narrower', 'once', 'portrait', 'right-side', 'rightwards', 'silent',
     'slow', 'slower', 'small-caption', 'soft', 'spell-out', 'status-bar',
     'super', 'text-bottom', 'text-top', 'wider', 'x-fast', 'x-high', 'x-loud',
-    'x-low', 'x-soft', 'yes', 'pre', 'pre-wrap', 'pre-line',
+    'x-low', 'x-soft', 'yes', 'pre', 'pre-wrap', 'pre-line'
     ]
 
 # List of functional notation and function keyword values:
@@ -204,7 +212,7 @@ equates
     'rotateY', 'rotateZ', 'saturate', 'saturation', 'scale', 'scale3d',
     'scaleX', 'scaleY', 'scaleZ', 'sepia', 'shade', 'skewX', 'skewY', 'steps',
     'tint', 'toggle', 'translate', 'translate3d', 'translateX', 'translateY',
-    'translateZ', 'whiteness',
+    'translateZ', 'whiteness'
     ]
 
 # Note! Handle url(...) separately.
@@ -212,22 +220,82 @@ equates
 # List of units obtained from:
 # https://www.w3.org/TR/css3-values/
   _angle_units = [
-    'deg', 'grad', 'rad', 'turn',
+    'deg', 'grad', 'rad', 'turn'
     ]
 
   _frequency_units = [
-    'Hz', 'kHz',
+    'Hz', 'kHz'
     ]
   _length_units = [
     'em', 'ex', 'ch', 'rem',
     'vh', 'vw', 'vmin', 'vmax',
-    'px', 'mm', 'cm', 'in', 'pt', 'pc', 'q',
+    'px', 'mm', 'cm', 'in', 'pt', 'pc', 'q'
     ]
   _resolution_units = [
-    'dpi', 'dpcm', 'dppx',
+    'dpi', 'dpcm', 'dppx'
     ]
   _time_units = [
-    's', 'ms',
+    's', 'ms'
     ]
   _all_units = _angle_units + _frequency_units + _length_units +
                _resolution_units + _time_units
+includes
+  basics:
+    /\*(?:.|\n)*?\*/              => Comment
+    \{                            => Punctuation >content
+    (\:{1,2})([\w-]+)             => (Punctuation Name.Decorator)
+    (\.)([\w-]+)                  => (Punctuation Name.Class)
+    (\#)([\w-]+)                  => (Punctuation Name.Namespace)
+    (@)([\w-]+)                   => (Punctuation Keyword) >atrule
+    [\w-]+                        => Name.Tag
+    [~^*!%&$\[\]()<>|+=@:;,./?-]  => Operator
+    "(\\\\|\\"|[^"])*"            => String.Double
+    '(\\\\|\\'|[^'])*'            => String.Single
+  urls:
+    (url)(\()(".*?")(\))  => (Name.Builtin Punctuation String.Double Punctuation)
+    (url)(\()('.*?')(\))  => (Name.Builtin Punctuation String.Single Punctuation)
+    (url)(\()(.*?)(\))    => (Name.Builtin Punctuation String.Other Punctuation)
+  numeric-values:
+    \#[a-zA-Z0-9]{1,6}     => Number.Hex
+    [+\-]?[0-9]*[.][0-9]+  => Number.Float >numeric-end
+    [+\-]?[0-9]+           => Number.Integer >numeric-end
+states
+  root:
+    include basics
+  atrule:
+    \{  => Punctuation >atcontent
+    ;   => Punctuation ^
+    include basics
+  content:
+    \}                                       => Punctuation ^
+    ;                                        => Punctuation
+    ^@.*?$                                   => Comment.Preproc
+    {{ words(_vendor_prefixes) }}            => Keyword.Pseudo
+    ({{ words(_css_properties) }})(\s*)(\:)  => (Keyword Text Punctuation) >value-start
+    ([a-zA-Z_][\w-]*)(\s*)(\:)               => (Name Text Punctuation) >value-start
+    /\*(?:.|\n)*?\*/                         => Comment
+  value-start:
+    {{words(_vendor_prefixes)}}                               => Name.Builtin.Pseudo
+    include urls
+    ({{ words( _functional_notation_keyword_values ) }})(\()  => (Name.Builtin Punctuation) >function-start
+    ([a-zA-Z_][\w-]+)(\()                                     => (Name.Function Punctuation) >function-start
+    {{ words(_keyword_values) }}\b                            => Keyword.Constant
+    {{ words(_other_keyword_values) }}\b                      => Keyword.Constant
+    {{ words(_color_keywords) }}\b                            => Keyword.Constant
+    {{ words(_css_properties) }}\b                            => Keyword # for transition-property etc.
+    \!important                                               => Comment.Preproc
+    /\*(?:.|\n)*?\*/                                          => Comment
+
+    include numeric-values
+
+    [~^*!%&<>|+=@:./?-]+                                      => Operator
+    [\[\](),]+                                                => Punctuation
+    "(\\\\|\\"|[^"])*"                                        => String.Double
+    '(\\\\|\\'|[^'])*'                                        => String.Single
+    [a-zA-Z_][\w-]*                                           => Name
+    ;                                                         => Punctuation ^
+    \}                                                        => Punctuation ^2
+  numeric-end:
+    {{ words(_all_units) }}\b  => Keyword.Type
+    %                          => Keyword.Type
+                               => ^
