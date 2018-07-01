@@ -68,7 +68,7 @@ object HighlighterParser extends RegexParsers {
     }
 
   def rules =
-    matchRule | includeRule
+    matchRule | includeRule | defaultRule
 
   def matchRule =
     guard(not(ident ~ ":")) ~> pattern ~ "=>" ~ rep1(action) ^^ {
@@ -79,7 +79,7 @@ object HighlighterParser extends RegexParsers {
     rep1(guard(not("=>")) ~> segment)
 
   def segment =
-    guard(not("{{")) ~> """.*?(?==>|\{\{)""".r ^^ StaticRAST |
+    guard(not("{{")) ~> """.+?(?==>|\{\{)""".r ^^ StaticRAST |
     "{{" ~> code <~ "}}"
 
   def code: Parser[RAST] =
@@ -115,6 +115,9 @@ object HighlighterParser extends RegexParsers {
 
   def includeRule =
     "include" ~> ident ^^ IncludeRule
+
+  def defaultRule =
+    "=>" ~> rep1(action) ^^ DefaultRule
 
   def classesSection =
     "classes" ~> nl ~> rep1(mapping <~ onl) ^^ (ms => Classes( ms toMap ))

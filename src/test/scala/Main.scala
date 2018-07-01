@@ -311,6 +311,10 @@ object Main extends App {
           |    [a-zA-Z_][\w-]* => Name
           |    ; => Punctuation ^
           |    \} => Punctuation ^2
+          |  numeric-end:
+          |    {{ words(_all_units) }}\b => Keyword.Type
+          |    % => Keyword.Type
+          |    => ^
         """.stripMargin
       )
 
