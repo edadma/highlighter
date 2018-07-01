@@ -45,20 +45,13 @@ package object highlighter {
 
   implicit def symbol2state( state: Symbol ) = Push( state.name )
 
-//  implicit def symbols2states( states: Seq[Symbol] ): Seq[Transition] = states map (s => Push( s.name ))
-
-//  implicit def symbol2states( state: Symbol ): Seq[Transition] = Seq( Push(state.name) )
-
   implicit def transition2seq( transition: Transition ) = Seq( transition )
 
-//  implicit def symbol2include( include: Symbol ) = null.asInstanceOf[Regex] -> IncludeRules( include.name )
   implicit def symbols2tokens( tokens: Seq[Symbol] ) = tokens map (s => Token( s.name ))
 
   implicit def strings2tokens( tokens: Seq[String] ) = tokens map (s => Token( s ))
 
   implicit def string2state( state: String ) = Push( state )
-
-//  implicit def string2pattern( regex: String ) = Pattern.compile( regex )
 
   implicit def strings2states( states: Seq[String] ) = states map (s => Push( s ))
 
@@ -78,5 +71,4 @@ package object highlighter {
 
 //  implicit def tuple2rule( rule: (String, Symbol) ) = MatchRule( rule._1, rule._2 )
 
-//  implicit def symbol2action( clas: Symbol ) = Action( clas )
 }

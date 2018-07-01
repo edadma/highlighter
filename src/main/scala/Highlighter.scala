@@ -3,7 +3,6 @@ package xyz.hyperreal.highlighter
 
 import java.util.regex.{MatchResult, Pattern}
 
-import scala.util.matching.Regex
 import scala.collection.mutable.ArrayStack
 import xyz.hyperreal.backslash.{AST, Command, Parser, Renderer}
 

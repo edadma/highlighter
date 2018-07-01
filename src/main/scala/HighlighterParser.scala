@@ -1,8 +1,6 @@
 //@
 package xyz.hyperreal.highlighter
 
-import java.util.regex.Pattern
-
 import scala.collection.mutable
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.{PagedSeq, PagedSeqReader}
