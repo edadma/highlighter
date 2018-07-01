@@ -212,7 +212,7 @@ object Main extends App {
           |    'mix', 'narrower', 'once', 'portrait', 'right-side', 'rightwards', 'silent',
           |    'slow', 'slower', 'small-caption', 'soft', 'spell-out', 'status-bar',
           |    'super', 'text-bottom', 'text-top', 'wider', 'x-fast', 'x-high', 'x-loud',
-          |    'x-low', 'x-soft', 'yes', 'pre', 'pre-wrap', 'pre-line',
+          |    'x-low', 'x-soft', 'yes', 'pre', 'pre-wrap', 'pre-line'
           |    ]
           |
           |# List of functional notation and function keyword values:
@@ -227,7 +227,7 @@ object Main extends App {
           |    'rotateY', 'rotateZ', 'saturate', 'saturation', 'scale', 'scale3d',
           |    'scaleX', 'scaleY', 'scaleZ', 'sepia', 'shade', 'skewX', 'skewY', 'steps',
           |    'tint', 'toggle', 'translate', 'translate3d', 'translateX', 'translateY',
-          |    'translateZ', 'whiteness',
+          |    'translateZ', 'whiteness'
           |    ]
           |
           |# Note! Handle url(...) separately.
@@ -235,22 +235,22 @@ object Main extends App {
           |# List of units obtained from:
           |# https://www.w3.org/TR/css3-values/
           |  _angle_units = [
-          |    'deg', 'grad', 'rad', 'turn',
+          |    'deg', 'grad', 'rad', 'turn'
           |    ]
           |
           |  _frequency_units = [
-          |    'Hz', 'kHz',
+          |    'Hz', 'kHz'
           |    ]
           |  _length_units = [
           |    'em', 'ex', 'ch', 'rem',
           |    'vh', 'vw', 'vmin', 'vmax',
-          |    'px', 'mm', 'cm', 'in', 'pt', 'pc', 'q',
+          |    'px', 'mm', 'cm', 'in', 'pt', 'pc', 'q'
           |    ]
           |  _resolution_units = [
-          |    'dpi', 'dpcm', 'dppx',
+          |    'dpi', 'dpcm', 'dppx'
           |    ]
           |  _time_units = [
-          |    's', 'ms',
+          |    's', 'ms'
           |    ]
           |  _all_units = _angle_units + _frequency_units + _length_units +
           |               _resolution_units + _time_units
@@ -277,7 +277,7 @@ object Main extends App {
           |    \} => Punctuation ^
           |    ; => Punctuation
           |    ^@.*?$ => Comment.Preproc
-          |    {{words(_vendor_prefixes)}} Keyword.Pseudo
+          |    {{words(_vendor_prefixes)}} => Keyword.Pseudo
           |    ({{words(_css_properties)}})(\s*)(\:) => (Keyword Text Punctuation) => value-start
           |    ([a-zA-Z_][\w-]*)(\s*)(\:) => (Name Text Punctuation) >value-start
           |    /\*(?:.|\n)*?\*/ => Comment
