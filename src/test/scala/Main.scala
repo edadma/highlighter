@@ -5,11 +5,8 @@ object Main extends App {
 
   val input =
     """
-      |val a = value
-      |/* asdf
-      | zxcv */
-      |validate b = -456 // this is a comment
-      |asdf c = 789
+      |body {background-color: powderblue;}
+      |p    {color: red;}
     """.stripMargin
   val highlighter =
     new Highlighter {
@@ -22,6 +19,10 @@ object Main extends App {
           |templates
           |  default: {{ <\class\ "\escape\text"> }}
           |equates
+          |  _vendor_prefixes = [
+          |    '-ms-', 'mso-', '-moz-', '-o-', '-xv-', '-atsc-', '-wap-', '-khtml-',
+          |    '-webkit-', 'prince-', '-ah-', '-hp-', '-ro-', '-rim-', '-tc-'
+          |    ]
           |  _css_properties = [
           |    'align-content', 'align-items', 'align-self', 'alignment-baseline', 'all',
           |    'animation', 'animation-delay', 'animation-direction',
@@ -278,7 +279,7 @@ object Main extends App {
           |    ; => Punctuation
           |    ^@.*?$ => Comment.Preproc
           |    {{words(_vendor_prefixes)}} => Keyword.Pseudo
-          |    ({{words(_css_properties)}})(\s*)(\:) => (Keyword Text Punctuation) => value-start
+          |    ({{words(_css_properties)}})(\s*)(\:) => (Keyword Text Punctuation) >value-start
           |    ([a-zA-Z_][\w-]*)(\s*)(\:) => (Name Text Punctuation) >value-start
           |    /\*(?:.|\n)*?\*/ => Comment
         """.stripMargin
