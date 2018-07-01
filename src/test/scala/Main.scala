@@ -9,7 +9,7 @@ object Main extends App {
       |/* asdf
       | zxcv */
       |validate b = -456 // this is a comment
-      |val c = 789
+      |asdf c = 789
     """.stripMargin
   val highlighter =
     new Highlighter {
@@ -29,7 +29,7 @@ object Main extends App {
           |    'validate']
           |states
           |  root:
-          |    {{words( keywords )}}\b     => keyword
+          |    {{words( keywords + ['asdf'] )}}\b     => keyword
           |    {{digits}}  => number
           |    -{{digits}} => number
           |    \w+     => ident

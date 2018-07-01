@@ -81,12 +81,19 @@ object HighlighterParser extends RegexParsers {
     "{{" ~> code <~ "}}"
 
   def code: Parser[RAST] =
-    function | value
+    additive
+
+  def additive =
+    function ~ rep("+" ~ function) ^^ {
+      case a ~ l => (a /: l) {
+        case (l, op ~ r) => BinaryRAST( l, op, r )
+      }
+    }
 
   def function =
     ident ~ "(" ~ repsep(code, "," ~ onl) ~ ")" ^^ {
-      case name ~ _ ~ args ~ _ => FunctionRAST( name, args )
-    }
+      case name ~ _ ~ args ~ _ => FunctionRAST( name, args ) } |
+    value
 
   def value =
     "'" ~> "[^']*".r <~ "'" ^^ LiteralRAST |

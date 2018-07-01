@@ -73,6 +73,11 @@ abstract class Highlighter {
       case FunctionRAST( "words", List(words: RAST) ) =>
         eval( words ).asInstanceOf[List[_]] map (_.toString) sortWith (_.length > _.length) map Pattern.quote mkString ("(?:", "|", ")")
       case FunctionRAST( f, args ) => sys.error( s"unknown function: $f, $args" )
+      case BinaryRAST( l, "+", r ) =>
+        (eval( l ), eval( r )) match {
+          case (a: List[_], b: List[_]) => a ++ b
+          case (a, b) => a.toString + b.toString
+        }
     }
 
   def highlight( code: io.Source ): String = highlight( code mkString )
