@@ -39,7 +39,7 @@ object HighlighterParser extends RegexParsers {
   def infoItems =
     "name" ~> ":" ~> ident <~ onl ^^ Name
 
-  def ident = """[a-zA-Z][\w-]*"""r
+  def ident = """[a-zA-Z_][\w._-]*"""r
 
   def templateSection =
     "templates" ~> nl ~> rep1(template) ^^ (ts => Templates( ts toMap ))
