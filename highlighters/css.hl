@@ -1,7 +1,7 @@
 highlighter
   name: css
 templates
-  default: {{ <\class\ "\escape\text"> }}
+  default: {{ <span class="\class">\escape\text</span> }}
 equates
   _vendor_prefixes = [
     '-ms-', 'mso-', '-moz-', '-o-', '-xv-', '-atsc-', '-wap-', '-khtml-',
