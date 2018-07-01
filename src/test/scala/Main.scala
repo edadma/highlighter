@@ -27,7 +27,7 @@ object Main extends App {
           |  digits = '\d+'
           |  keywords = ['val',
           |    'validate']
-          |states
+          |states #states
           |  root:
           |    {{words( keywords + ['asdf'] )}}\b     => keyword
           |    {{digits}}  => number

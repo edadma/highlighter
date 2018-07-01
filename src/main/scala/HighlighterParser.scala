@@ -8,7 +8,7 @@ import scala.util.parsing.input.{PagedSeq, PagedSeqReader}
 
 object HighlighterParser extends RegexParsers {
 
-  override val whiteSpace = """[ \t]+"""r
+  override val whiteSpace = """(?:[ \t]|#.*)+"""r
 
   val equates = new mutable.HashMap[String, RAST]
 
@@ -97,7 +97,7 @@ object HighlighterParser extends RegexParsers {
 
   def value =
     "'" ~> "[^']*".r <~ "'" ^^ LiteralRAST |
-    "[" ~> repsep(code, "," ~ onl) <~ "]" ^^ ListRAST |
+    "[" ~> onl ~> repsep(code, "," ~ onl) <~ onl <~ "]" ^^ ListRAST |
     ident ^^ VariableRAST
 
   def action =
