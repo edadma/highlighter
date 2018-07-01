@@ -70,7 +70,7 @@ abstract class Highlighter {
       case StaticRAST( s ) => s
       case ListRAST( l ) => l map eval
       case LiteralRAST( v ) => v
-      case Variable( v ) => eval(equates(v))
+      case VariableRAST( v ) => eval(equates(v))
       case FunctionRAST( "words", List(words: RAST) ) =>
         eval( words ).asInstanceOf[List[_]] map (_.toString) sortWith (_.length > _.length) map Pattern.quote mkString ("(?:", "|", ")")
       case FunctionRAST( f, args ) => sys.error( s"unknown function: $f, $args" )
@@ -155,9 +155,9 @@ abstract class Highlighter {
       def apply( rule: Rule ): Option[(MatchResult, Seq[Action])] =
         rule match {
           case rule@MatchRule( regex, actions ) =>
-            prefix( rule.pattern(Pattern.compile(regex, flags)) ) map (m => (m, actions))
+            prefix( rule.pattern(Pattern.compile((regex map eval mkString) trim, flags)) ) map (m => (m, actions))
           case rule@MismatchRule( regex, actions ) =>
-            prefix( rule.pattern(Pattern.compile(regex, flags)) ) map (_ => (null, actions))
+            prefix( rule.pattern(Pattern.compile((regex map eval mkString) trim, flags)) ) map (_ => (null, actions))
           case DefaultRule( actions ) => Some( (null, actions) )
           case rule@IncludeRule( include ) =>
             search( rule.rules(

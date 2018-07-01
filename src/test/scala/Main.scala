@@ -5,21 +5,40 @@ object Main extends App {
 
   val input =
     """
-      |testing [else]...
-    """.trim.stripMargin
+      |val a = value
+      |/* asdf
+      | zxcv */
+      |validate b = -456 // this is a comment
+      |val c = 789
+    """.stripMargin
   val highlighter =
     new Highlighter {
       //trace = true
 
       def define = HighlighterParser(
         """
+          |highlighter
+          |  name: basics
           |options
-          |  regex: multiline
+          |  regex: dotall multiline
           |templates
-          |  default: {{ <span class="\class">\escape\text</span> }}
+          |  default: {{ <\class\ "\escape\text"> }}
+          |equates
+          |  digits = '\d+'
+          |  keywords = ['val',
+          |    'validate']
           |states
           |  root:
-          |    \[{{words( ['else', 'elseif'] )}}\] => keyword
+          |    {{words( keywords )}}\b     => keyword
+          |    {{digits}}  => number
+          |    -{{digits}} => number
+          |    \w+     => ident
+          |    =       => symbol
+          |    /\*     => comment >comment
+          |    //.*?$  => comment
+          |  comment:
+          |    \*/   => comment ^
+          |    .     => comment
         """.stripMargin
       )
 

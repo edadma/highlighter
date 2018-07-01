@@ -86,13 +86,14 @@ object HighlighterParser extends RegexParsers {
     function | value
 
   def function =
-    ident ~ "(" ~ repsep(code, ",") ~ ")" ^^ {
+    ident ~ "(" ~ repsep(code, "," ~ onl) ~ ")" ^^ {
       case name ~ _ ~ args ~ _ => FunctionRAST( name, args )
     }
 
   def value =
     "'" ~> "[^']*".r <~ "'" ^^ LiteralRAST |
-    "[" ~> repsep(code, ",") <~ "]" ^^ ListRAST
+    "[" ~> repsep(code, "," ~ onl) <~ "]" ^^ ListRAST |
+    ident ^^ VariableRAST
 
   def action =
     token ^^ Match |
