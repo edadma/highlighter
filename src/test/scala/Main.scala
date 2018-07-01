@@ -29,7 +29,8 @@ object Main extends App {
           |    'validate']
           |states #states
           |  root:
-          |    {{words( keywords + ['asdf'] )}}\b     => keyword
+          |    {{words( keywords +
+          |      ['asdf'] )}}\b     => keyword
           |    {{digits}}  => number
           |    -{{digits}} => number
           |    \w+     => ident

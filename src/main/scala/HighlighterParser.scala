@@ -84,7 +84,7 @@ object HighlighterParser extends RegexParsers {
     additive
 
   def additive =
-    function ~ rep("+" ~ function) ^^ {
+    function ~ rep(("+" <~ onl) ~ function) ^^ {
       case a ~ l => (a /: l) {
         case (l, op ~ r) => BinaryRAST( l, op, r )
       }
