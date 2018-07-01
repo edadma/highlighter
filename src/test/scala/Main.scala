@@ -267,6 +267,14 @@ object Main extends App {
           |    [~^*!%&$\[\]()<>|+=@:;,./?-] => Operator
           |    "(\\\\|\\"|[^"])*" => String.Double
           |    '(\\\\|\\'|[^'])*' => String.Single
+          |  urls:
+          |    (url)(\()(".*?")(\)) => (Name.Builtin Punctuation String.Double Punctuation)
+          |    (url)(\()('.*?')(\)) => (Name.Builtin Punctuation String.Single Punctuation)
+          |    (url)(\()(.*?)(\)) => (Name.Builtin Punctuation String.Other Punctuation)
+          |  numeric-values:
+          |    \#[a-zA-Z0-9]{1,6} => Number.Hex
+          |    [+\-]?[0-9]*[.][0-9]+ => Number.Float >numeric-end
+          |    [+\-]?[0-9]+ => Number.Integer >numeric-end
           |states
           |  root:
           |    include basics
@@ -282,6 +290,27 @@ object Main extends App {
           |    ({{words(_css_properties)}})(\s*)(\:) => (Keyword Text Punctuation) >value-start
           |    ([a-zA-Z_][\w-]*)(\s*)(\:) => (Name Text Punctuation) >value-start
           |    /\*(?:.|\n)*?\*/ => Comment
+          |  value-start:
+          |    {{words(_vendor_prefixes)}} => Name.Builtin.Pseudo
+          |    include urls
+          |    ({{ words( _functional_notation_keyword_values ) }})(\() => (Name.Builtin Punctuation) >function-start
+          |    ([a-zA-Z_][\w-]+)(\() => (Name.Function Punctuation) >function-start
+          |    {{ words(_keyword_values) }}\b => Keyword.Constant
+          |    {{ words(_other_keyword_values) }}\b => Keyword.Constant
+          |    {{ words(_color_keywords) }}\b => Keyword.Constant
+          |    {{ words(_css_properties) }}\b => Keyword # for transition-property etc.
+          |    \!important => Comment.Preproc
+          |    /\*(?:.|\n)*?\*/ => Comment
+          |
+          |    include numeric-values
+          |
+          |    [~^*!%&<>|+=@:./?-]+ => Operator
+          |    [\[\](),]+ => Punctuation
+          |    "(\\\\|\\"|[^"])*" => String.Double
+          |    '(\\\\|\\'|[^'])*' => String.Single
+          |    [a-zA-Z_][\w-]* => Name
+          |    ; => Punctuation ^
+          |    \} => Punctuation ^2
         """.stripMargin
       )
 
@@ -291,21 +320,3 @@ object Main extends App {
   println( highlighter.highlight(input) )
 
 }
-
-/*
-
-<div class="highlight highlight-text-html-basic"><pre>&lt;!DOCTYPE html&gt;
-&lt;<span class="pl-ent">html</span>&gt;
-  &lt;<span class="pl-ent">head</span>&gt;
-    &lt;<span class="pl-ent">style</span>&gt;<span class="pl-s1"></span>
-<span class="pl-s1">      <span class="pl-ent">body</span> {<span class="pl-c1"><span class="pl-c1">background-color</span></span>: <span class="pl-c1">powderblue</span>;}</span>
-<span class="pl-s1">      <span class="pl-ent">p</span>    {<span class="pl-c1"><span class="pl-c1">color</span></span>: <span class="pl-c1">red</span>;}</span>
-<span class="pl-s1">    </span><span class="pl-s1">&lt;</span>/<span class="pl-ent">style</span>&gt;
-  &lt;/<span class="pl-ent">head</span>&gt;
-  &lt;<span class="pl-ent">body</span>&gt;
-    <span class="pl-c"><span class="pl-c">&lt;!--</span> comment <span class="pl-c">--&gt;</span></span>
-    &lt;<span class="pl-ent">p</span> <span class="pl-e">align</span>=<span class="pl-s"><span class="pl-pds">"</span>right<span class="pl-pds">"</span></span>&gt;paragraph&lt;/<span class="pl-ent">p</span>&gt;
-  &lt;/<span class="pl-ent">body</span>&gt;
-&lt;/<span class="pl-ent">html</span>&gt;</pre></div>
-
- */
