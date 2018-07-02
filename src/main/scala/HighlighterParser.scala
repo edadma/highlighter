@@ -103,13 +103,14 @@ object HighlighterParser extends RegexParsers {
     ident ^^ VariableRAST
 
   def action =
-    token ^^ Match |
-    "(" ~> rep1(token) <~ ")" ^^ Groups |
+    chars ^^ Match |
+    "(" ~> rep1(chars) <~ ")" ^^ Groups |
     ">" ~> ident ^^ Push |
     "^" ~> integer ^^ Popn |
     "^" ^^^ Pop
 
-  def token =
+  def chars =
+    "[" ~> ident <~ "]" ^^ Using
     ident ~ "/" ~ ident ^^ { case c ~ _ ~ t => Token( c, t ) } |
     ident ^^ (c => Token( c, "default" ))
 

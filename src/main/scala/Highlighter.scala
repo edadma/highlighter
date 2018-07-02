@@ -85,7 +85,7 @@ abstract class Highlighter {
 
   def highlight( code: io.Source ): String = highlight( code mkString )
 
-  def highlight( code: String, callback: (String, Token) => Unit = null ) = {
+  def highlight( code: String, callback: (String, Chars) => Unit = null ): String = {
 
     val stack =
       new ArrayStack[State] {
@@ -101,17 +101,7 @@ abstract class Highlighter {
         println( s )
 
     def output( s: String, clas: Chars ) {
-      if (callback ne null)
-        callback( s, clas )
-      else if (s nonEmpty) {
-        dotrace( "output",  s""""$s", $clas""" )
-
-        val (cls, tmp) =
-          clas match {
-            case Token( "text", _ ) => ("text", "text")
-            case Token( c, t ) => (c, t)
-          }
-
+      def out( cls: String, tmp: String ): Unit = {
         templates get tmp match {
           case None =>
             if (tmp == "text") {
@@ -128,6 +118,18 @@ abstract class Highlighter {
               prevclass = cls
               chunk ++= s
             }
+        }
+      }
+
+      if (callback ne null)
+        callback( s, clas )
+      else if (s nonEmpty) {
+        dotrace( "output",  s""""$s", $clas""" )
+
+        clas match {
+          case Token( "text", _ ) => out( "text", "text" )
+          case Token( c, t ) => out( c, t )
+          case Using( highlighter ) => highlighter.highlight( s, output )
         }
       }
     }

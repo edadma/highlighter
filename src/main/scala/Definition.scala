@@ -43,5 +43,5 @@ case class Transition( name: String ) extends Action { val state = new Const[Sta
 case class Output( s: String, tok: Chars ) extends Action
 
 trait Chars
-case class Using( highlighter: Highlighter ) extends Chars
+case class Using( highlighter: String ) extends Chars
 case class Token( clas: String, template: String = "default" ) extends Chars
