@@ -6,11 +6,14 @@ import java.util.regex.{MatchResult, Pattern}
 import scala.collection.mutable.ArrayStack
 import xyz.hyperreal.backslash.{AST, Command, Parser, Renderer}
 
+import scala.collection.mutable
+
 
 abstract class Highlighter {
 
   def define: Definition
 
+  val dependencies = new mutable.HashMap[String, Highlighter]
   var trace = false
   val parser = new Parser( Command.standard )
   val (flags, name, templates, states, classes, includes, equates) = {
@@ -64,8 +67,8 @@ abstract class Highlighter {
     )
   val renderer = new Renderer( parser, config )
 
-  def eval( s: RAST ): Any =
-    s match {
+  def eval( rast: RAST ): Any =
+    rast match {
       case StaticRAST( s ) => s
       case ListRAST( l ) => l map eval
       case LiteralRAST( v ) => v
@@ -82,7 +85,7 @@ abstract class Highlighter {
 
   def highlight( code: io.Source ): String = highlight( code mkString )
 
-  def highlight( code: String ) = {
+  def highlight( code: String, callback: (String, Token) => Unit = null ) = {
 
     val stack =
       new ArrayStack[State] {
@@ -97,8 +100,10 @@ abstract class Highlighter {
       if (trace)
         println( s )
 
-    def output( s: String, clas: Token ) =
-      if (s nonEmpty) {
+    def output( s: String, clas: Chars ) {
+      if (callback ne null)
+        callback( s, clas )
+      else if (s nonEmpty) {
         dotrace( "output",  s""""$s", $clas""" )
 
         val (cls, tmp) =
@@ -125,6 +130,7 @@ abstract class Highlighter {
             }
         }
       }
+    }
 
     def flush: Unit =
       if (prevclass ne null) {
@@ -187,10 +193,10 @@ abstract class Highlighter {
                   sys.error( "number of groups not equal to number of tokens" ) // put a Position in the Rule
                 for ((t, i) <- toks zipWithIndex)
                   output( code.substring(info.start(i + 1), info.end(i + 1)), t )
-              case action@Push( name ) =>
+              case action@Push( statename ) =>
                 stack push action.state(
-                  states get name match {
-                    case None => sys.error( s"unknown state: $name" )
+                  states get statename match {
+                    case None => sys.error( s"unknown state: $statename" )
                     case Some( s ) => s
                   } )
               case Pop => stack pop

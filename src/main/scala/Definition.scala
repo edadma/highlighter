@@ -33,13 +33,15 @@ case class DefaultRule( actions: Seq[Action] ) extends Rule
 case class IncludeRule( include: String ) extends Rule { val rules = new Const[Seq[Rule]] }
 
 trait Action
-case class Match( tok: Token ) extends Action { val ast = new Const[AST] }
-case class Groups( toks: Seq[Token] ) extends Action { val asts = Seq.fill( toks.length )( new Const[AST] ) }
-case class Using( fs: Seq[Either[Token, Highlighter]] ) extends Action
+case class Match( tok: Chars ) extends Action { val ast = new Const[AST] }
+case class Groups( toks: Seq[Chars] ) extends Action { val asts = Seq.fill( toks.length )( new Const[AST] ) }
+//case class Using( fs: Seq[Either[Token, Highlighter]] ) extends Action
 case class Push( name: String ) extends Action { val state = new Const[State] }
 case object Pop extends Action
 case class Popn( n: Int ) extends Action
 case class Transition( name: String ) extends Action { val state = new Const[State] }
-case class Output( s: String, tok: Token ) extends Action
+case class Output( s: String, tok: Chars ) extends Action
 
-case class Token( clas: String, template: String = "default" )
+trait Chars
+case class Using( highlighter: Highlighter ) extends Chars
+case class Token( clas: String, template: String = "default" ) extends Chars
