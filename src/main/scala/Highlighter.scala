@@ -128,7 +128,7 @@ abstract class Highlighter {
         dotrace( "output",  s""""$s", $clas""" )
 
         clas match {
-          case Token( "text", _ ) => out( "text", "text" )
+          case Token( c@("text"|"Text"), _ ) => out( c, "text" )
           case Token( c, t ) => out( c, t )
           case u@Using( dependency ) => u.highlighter(
             dependencies get dependency match {
