@@ -28,7 +28,7 @@ states
     .+?(?=<\s*/\s*script\s*>)  => javascript
   style-content:
     (<)\s*(/)\s*(style)\s*(>) => (tagdelim tagdelim tag tagdelim) ^
-    .+?(?=<\s*/\s*style\s*>)  => css
+    .+?(?=<\s*/\s*style\s*>)  => [css]
   attr:
     (")(.*?)(") => (stringdelim string stringdelim) ^
     (')(.*?)(') => (stringdelim string stringdelim) ^
