@@ -12,6 +12,12 @@ import scala.collection.mutable
 abstract class Highlighter {
 
   def define: Definition
+  def config =
+    Map(
+      "today" -> "MMMM d, y",
+      "include" -> ".",
+      "rounding" -> "HALF_EVEN"
+    )
 
   val dependencies = new mutable.HashMap[String, Highlighter]
   var trace = false
@@ -59,12 +65,6 @@ abstract class Highlighter {
       sys.error( "missing root state" )
 
     (_flags, _name, _templates, _states, _classes, _includes, _equates) }
-  val config =
-    Map(
-      "today" -> "MMMM d, y",
-      "include" -> ".",
-      "rounding" -> "HALF_EVEN"
-    )
   val renderer = new Renderer( parser, config )
 
   def eval( rast: RAST ): Any =
@@ -85,7 +85,7 @@ abstract class Highlighter {
 
   def highlight( code: io.Source ): String = highlight( code mkString )
 
-  def highlight( code: String, callback: (String, Chars) => Unit = null ): String = {
+  def highlight( code: String, send: (String, Chars) => Unit = null ): String = {
 
     val stack =
       new ArrayStack[State] {
@@ -121,8 +121,8 @@ abstract class Highlighter {
         }
       }
 
-      if (callback ne null)
-        callback( s, clas )
+      if (send ne null)
+        send( s, clas )
       else if (s nonEmpty) {
         dotrace( "output",  s""""$s", $clas""" )
 
