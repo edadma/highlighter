@@ -110,7 +110,7 @@ object HighlighterParser extends RegexParsers {
     "^" ^^^ Pop
 
   def chars =
-    "[" ~> ident <~ "]" ^^ Using
+    "[" ~> ident <~ "]" ^^ Using |
     ident ~ "/" ~ ident ^^ { case c ~ _ ~ t => Token( c, t ) } |
     ident ^^ (c => Token( c, "default" ))
 

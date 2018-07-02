@@ -129,7 +129,11 @@ abstract class Highlighter {
         clas match {
           case Token( "text", _ ) => out( "text", "text" )
           case Token( c, t ) => out( c, t )
-          case Using( highlighter ) => highlighter.highlight( s, output )
+          case u@Using( dependency ) => u.highlighter(
+            dependencies get dependency match {
+              case None => sys.error( s"dependency not found: $dependency" )
+              case Some( highlighter ) => highlighter
+            } ).highlight( s, output )
         }
       }
     }
