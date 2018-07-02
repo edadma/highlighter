@@ -27,14 +27,6 @@ includes
     commentsandwhitespace:
         /\*.*?\*/ => Comment.Multiline
         #.*?\n => Comment.Single
-states
-    slashstartsregex:
-        include commentsandwhitespace
-        /(\\.|[^[/\\\n]|\[(\\.|[^\]\\\n])*])+/([gimuy]+\b|\B)c=> String.Regex ^
-        (?=/) => Text ^>badregex
-        => ^
-    badregex:
-        \n => Text ^
     root:
         \A#! ?/.*?\n => Comment.Hashbang  # recognized by node.js
         ^(?=\s|/|<!--) => Text >slashstartsregex
@@ -54,6 +46,27 @@ states
         (true|false|null|NaN|Infinity|undefined)\b => Keyword.Constant
         ({{ words( builtin ) }})\b => Name.Builtin
         JS_IDENT => Name.Other
-        "(\\\\|\\"|[^"])*"', String.Double),
-        (r"'(\\\\|\\'|[^'])*'", String.Single),
-        `', String.Backtick, 'interp
+        "(\\\\|\\"|[^"])*" => String.Double
+        '(\\\\|\\'|[^'])*' => String.Single
+        ` => String.Backtick >interp
+states
+    slashstartsregex:
+        include commentsandwhitespace
+        /(\\.|[^[/\\\n]|\[(\\.|[^\]\\\n])*])+/([gimuy]+\b|\B)c=> String.Regex ^
+        (?=/) => Text ^>badregex
+        => ^
+    badregex:
+        \n => Text ^
+    root:
+        include root
+    interp:
+        ` => String.Backtick ^
+        \\\\ => String.Backtick
+        \\` => String.Backtick
+        \$\{ => String.Interpol >interp-inside
+        \$ => String.Backtick
+        [^`\\$]+ => String.Backtick
+    interp-inside:
+        # TODO: should this include single-line comments and allow nesting strings?
+        \} => String.Interpol ^
+        include root
