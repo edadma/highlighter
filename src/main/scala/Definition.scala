@@ -25,6 +25,7 @@ trait LexerOption
 case object Ignorecase extends LexerOption
 case object Dotall extends LexerOption
 case object Multiline extends LexerOption
+case object Unicode extends LexerOption
 
 trait Rule
 case class MatchRule( regex: List[RAST], actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }

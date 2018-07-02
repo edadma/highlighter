@@ -1,0 +1,17 @@
+highlighter
+    name: HTML
+options
+    regex: dotall unicode multiline
+templates
+    default: {{ <span class="\class">\escape\text</span> }}
+includes
+    commentsandwhitespace:
+        /\*.*?\*/ => Comment.Multiline
+        #.*?\n => Comment.Single
+states
+    slashstartsregex:
+        include commentsandwhitespace
+        /(\\.|[^[/\\\n]|\[(\\.|[^\]\\\n])*])+/([gimuy]+\b|\B)c=> String.Regex ^
+        (?=/) => Text ^>badregex
+        => ^
+    root:
