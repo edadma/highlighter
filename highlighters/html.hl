@@ -6,30 +6,30 @@ templates
   default: {{ <span class="\class">\escape\text</span> }}
 states
   root:
-    (&)(\S*?)(;)                 => (entitydelim entity entitydelim)
-    \<\!\[CDATA\[.*?\]\]\>       => preproc
-    <!--                         => comment >comment
-    <\?.*?\?>                    => preproc
-    <![^>]*>                     => preproc
-    (<)\s*(script)\s*            => (tagdelim tag) >script-content >tag
-    (<)\s*(style)\s*             => (tagdelim tag) >style-content >tag
-    (<)\s*([\w:.-]+)             => (tagdelim tag) >tag
-    (<)\s*(/)\s*([\w:.-]+)\s*(>) => (tagdelim tagdelim tag tagdelim)
+    &\S*?;                        => Name.Entity
+    \<\!\[CDATA\[.*?\]\]\>        => Comment.Preproc
+    <!--                          => Comment >comment
+    <\?.*?\?>                     => Comment.Preproc
+    <![^>]*>                      => Comment.Preproc
+    (<)\s*(script)\s*             => (Punctuation Name.Tag) >script-content >tag
+    (<)\s*(style)\s*              => (Punctuation Name.Tag) >style-content >tag
+    (<)\s*([\w:.-]+)              => (Punctuation Name.Tag) >tag
+    (<)\s*(/)\s*([\w:.-]+)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation)
   comment:
-    [^-]+ => comment
-    -->   => comment ^
-    -     => comment
+    [^-]+  => Comment
+    -->    => Comment ^
+    -      => Comment
   tag:
-    ([\w:-]+)\s*(=)\s* => (attr oper) >attr
-    [\w:-]+            => attr
-    (/?)\s*(>)         => (tagdelim tagdelim) ^
+    ([\w:-]+)\s*(=)\s*  => (Name.Attribute Operator) >attr
+    [\w:-]+             => Name.Attribute
+    (/?)\s*(>)          => (Punctuation Punctuation) ^
   script-content:
-    (<)\s*(/)\s*(script)\s*(>) => (tagdelim tagdelim tag tagdelim) ^
-    .+?(?=<\s*/\s*script\s*>)  => javascript
+    (<)\s*(/)\s*(script)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
+    .+?(?=<\s*/\s*script\s*>)   => [javascript]
   style-content:
-    (<)\s*(/)\s*(style)\s*(>) => (tagdelim tagdelim tag tagdelim) ^
-    .+?(?=<\s*/\s*style\s*>)  => [css]
+    (<)\s*(/)\s*(style)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
+    .+?(?=<\s*/\s*style\s*>)   => [css]
   attr:
-    (")(.*?)(") => (stringdelim string stringdelim) ^
-    (')(.*?)(') => (stringdelim string stringdelim) ^
-    [^\s>]+     => string ^
+    ".*?"    => String ^
+    '.*?'    => String ^
+    [^\s>]+  => String ^
