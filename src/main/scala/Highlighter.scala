@@ -27,7 +27,7 @@ abstract class Highlighter {
     var _name: String = getClass.getName
     var _templates: Map[String, AST] = null
     var _states: Map[String, State] = null
-    var _classes: Map[String, String] = Map()
+    var _classes: Map[String, String] = null
     var _includes: Map[String, Seq[Rule]] = Map()
     var _equates: Map[String, RAST] = Map()
 
@@ -65,7 +65,7 @@ abstract class Highlighter {
     if (!_states.contains( "root" ))
       sys.error( "missing root state" )
 
-    (_flags, _name, _templates, _states, _classes, _includes, _equates) }
+    (_flags, _name, _templates, _states, if (_classes eq null) Builtin.map else _classes, _includes, _equates) }
   val renderer = new Renderer( parser, config )
 
   def eval( rast: RAST ): Any =
