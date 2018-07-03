@@ -5,37 +5,31 @@ options
 templates
     default: {{ <span class="\class">\escape\text</span> }}
 equates
-    # integer part of a number
-    int_part = '-?(0|[1-9]\d*)'
-
-    # fractional part of a number
-    frac_part = '\.\d+'
-
-    # exponential part of a number
-    exp_part = '[eE](\+|-)?\d+'
-states
+    int_part   = '-?(0|[1-9]\d*)'
+    frac_part  = '\.\d+'
+    exp_part   = '[eE][+-]?\d+'
+includes
     simplevalue:
-        true|false|null)\b => Keyword.Constant
-        {{ int_part }}({{ frac_part + exp_part }}|{{ exp_part }}|{{ frac_part }}) => Number.Float
-        {{ int_part }} => Number.Integer
-        "(\\\\|\\"|[^"])*" => String.Double
-    objectattribute:
-        include value
-        : => Punctuation
-        # comma terminates the attribute but expects more
-        , => Punctuation ^
-        # a closing bracket terminates the entire object, so pop twice
-        \} => Punctuation ^2
-    objectvalue:
-        "(\\\\|\\"|[^"])*" => Name.Tag >objectattribute
-        \} => Punctuation ^
-    arrayvalue:
-        include value
-        , => Punctuation
-        \] => Punctuation ^
+        true|false|null)\b                                                         => Keyword.Constant
+        {{ int_part }}({{ frac_part + exp_part }}|{{ exp_part }}|{{ frac_part }})  => Number.Float
+        {{ int_part }}                                                             => Number.Integer
+        "(\\\\|\\"|[^"])*"                                                         => String.Double
     value:
         include simplevalue
-        \{ => Punctuation >objectvalue
-        \[ => Punctuation >arrayvalue
+        \{  => Punctuation >objectvalue
+        \[  => Punctuation >arrayvalue
+states
+    objectattribute:
+        include value
+        :   => Punctuation
+        ,   => Punctuation ^
+        \}  => Punctuation ^2
+    objectvalue:
+        "(\\\\|\\"|[^"])*"  => Name.Tag >objectattribute
+        \}                  => Punctuation ^
+    arrayvalue:
+        include value
+        ,   => Punctuation
+        \]  => Punctuation ^
     root:
         include value
