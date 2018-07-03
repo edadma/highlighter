@@ -1,26 +1,33 @@
+//@
 package xyz.hyperreal.highlighter
 
 
 object Main extends App {
 
   if (args isEmpty) {
-    println( "java -jar highlighter.jar <definition> [<code>]" )
+    println( "java -jar highlighter.jar <definition>... [<input>]" )
     sys.exit( 1 )
   }
 
   val definition = HighlighterParser( io.Source.fromFile(args(0)) )
   val highlighter =
     new Highlighter {
+      for (i <- 1 to args.length - 2) {
+        val dep =
+          new Highlighter {
+            def define = HighlighterParser( io.Source.fromFile(args(i)) )
+          }
+
+        dependencies += (dep.name -> dep)
+      }
+
       def define = definition
     }
 
-  if (args.length < 2) {
+  if (args.length == 1)
     println( prettyPrint(definition) )
-  } else {
-    val input = io.Source.fromFile( args(1) )
-
-    println( highlighter.highlight(input) )
-  }
+  else
+    println( highlighter.highlight(io.Source.fromFile(args.last)) )
 
   /**
     * Pretty prints a Scala value similar to its source represention.

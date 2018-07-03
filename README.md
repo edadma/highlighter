@@ -113,7 +113,7 @@ libraryDependencies += "xyz.hyperreal" %% "highlighter" % "0.1"
 
 An executable can be downloaded from [here](https://dl.bintray.com/edadma/generic/highlighter-0.1.jar). *You do not need* the Scala library for it to work because the JAR already contains all dependencies. You just need Java 8+ installed.
 
-Run it as a normal Java executable JAR with the command `java -jar highlighter-0.1.jar <definition>... <input>` in the folder where you downloaded the file, where *definition* is the name of the highlighter definition file, and <input> is the file containing the code to be highlighted.  If multiple definition files are given, the first one is used for highlighting and the others are passed to it as dependencies.
+Run it as a normal Java executable JAR with the command `java -jar highlighter-0.1.jar <definition>... [<input>]` in the folder where you downloaded the file, where *definition* is the name of the highlighter definition file, and <input> is the file containing the code to be highlighted.  If multiple definition files are given, the first one is used for highlighting and the others are passed to it as dependencies.
 
 Building
 --------
