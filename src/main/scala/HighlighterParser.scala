@@ -80,7 +80,7 @@ object HighlighterParser extends RegexParsers {
     rep1(guard(not("=>")) ~> segment)
 
   def segment =
-    guard(not("{{")) ~> """.+?(?==>|\{\{)""".r ^^ StaticRAST |
+    guard(not("{{")) ~> """.+?(?=\s*(?:=>|\{\{))""".r ^^ StaticRAST |
     "{{" ~> code <~ "}}"
 
   def code: Parser[RAST] =
