@@ -56,7 +56,7 @@ object Main extends App {
         )
         '"' + replaceMap.foldLeft(s) { case (acc, (c, r)) => acc.replace(c, r) } + '"'
       // For an empty Seq just use its normal String representation.
-      case xs: Seq[_] if xs.isEmpty => xs.toString()
+      case xs: Seq[_] if xs.isEmpty => "Nil"
       case xs: Seq[_] =>
         // If the Seq is not too long, pretty print on one line.
         val resultOneLine = xs.map(nextDepth).toString()
@@ -72,7 +72,7 @@ object Main extends App {
         val fields = cls.getDeclaredFields.filterNot(_.isSynthetic).map(_.getName)
         val values = p.productIterator.toSeq
         // If we weren't able to match up fields/values, fall back to toString.
-        if (fields.length != values.length) return p.toString
+//        if (fields.length != values.length) return ">>>" + p.toString
         fields.zip(values).toList match {
           // If there are no fields, just use the normal String representation.
           case Nil => p.toString
