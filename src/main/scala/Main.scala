@@ -47,14 +47,14 @@ object Main extends App {
     val nextDepth = prettyPrint(_: Any, indentSize, maxElementWidth, depth + 1)
     a match {
       // Make Strings look similar to their literal form.
-      case s: String =>
+      case s: CharSequence =>
         val replaceMap = Seq(
           "\n" -> "\\n",
           "\r" -> "\\r",
           "\t" -> "\\t",
           "\"" -> "\\\""
         )
-        '"' + replaceMap.foldLeft(s) { case (acc, (c, r)) => acc.replace(c, r) } + '"'
+        '"' + replaceMap.foldLeft(s.toString) { case (acc, (c, r)) => acc.replace(c, r) } + '"'
       // For an empty Seq just use its normal String representation.
       case m: collection.Map[_, _] if m isEmpty => "Map()"
       case m: collection.Map[_, _] =>
