@@ -8,6 +8,8 @@ import scala.util.parsing.input.OffsetPosition
 
 object HTMLHighlighter extends Highlighter {
 
+  dependencies += ("CSS" -> CSSHighlighter)
+
   def define =
     Definition(List(
       InfoItems(List(Name("HTML"))),
@@ -321,7 +323,7 @@ object HTMLHighlighter extends Highlighter {
               regex = List(
                 StaticRAST(".+?(?=<\\s*/\\s*style\\s*>)")
               ),
-              actions = List(Match(Using("css")))
+              actions = List(Match(Using("CSS")))
             )
           )
         ),
