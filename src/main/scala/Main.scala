@@ -1,8 +1,6 @@
 //@
 package xyz.hyperreal.highlighter
 
-import scala.reflect.runtime._
-
 
 object Main extends App {
 
@@ -40,7 +38,12 @@ object Main extends App {
     * @param depth - Initial depth to pretty print indents.
     * @return
     *
-    * credit for this goes to https://gist.github.com/carymrobbins
+    * credit for the original version of this goes to https://gist.github.com/carymrobbins
+    *
+    * Changes:
+    * - fixed string escaping to handle backslashes
+    * - added support for Map
+    * - corrected case class reflection to work for case classes that have declared members other than accessors
     */
   def prettyPrint(a: Any, indentSize: Int = 2, maxElementWidth: Int = 30, depth: Int = 0): String = {
     val indent = " " * depth * indentSize
@@ -51,6 +54,7 @@ object Main extends App {
       // Make Strings look similar to their literal form.
       case s: CharSequence =>
         val replaceMap = Seq(
+          "\\" -> "\\\\",
           "\n" -> "\\n",
           "\r" -> "\\r",
           "\t" -> "\\t",
@@ -75,7 +79,7 @@ object Main extends App {
         // We'll use reflection to get the constructor arg names and values.
 //        val cls = p.getClass
 //        val fields = cls.getDeclaredFields.filterNot(_.isSynthetic).map(_.getName)
-        val fields = currentMirror.reflect(p).symbol.typeSignature.decls.
+        val fields = scala.reflect.runtime.currentMirror.reflect(p).symbol.typeSignature.decls.
           filter(s => s.isMethod && s.asMethod.isCaseAccessor).toList.map(_.name)
         val values = p.productIterator.toSeq
         if (fields.length != values.length) sys.error( s"fields and values lists have unequal length: $p" )
