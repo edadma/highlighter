@@ -56,6 +56,9 @@ object Main extends App {
         )
         '"' + replaceMap.foldLeft(s) { case (acc, (c, r)) => acc.replace(c, r) } + '"'
       // For an empty Seq just use its normal String representation.
+      case m: collection.Map[_, _] if m isEmpty => "Map()"
+      case m: collection.Map[_, _] =>
+        m.map { case (k, v) => s"\n$fieldIndent${nextDepth(k)} -> ${nextDepth(v)}" }.mkString( "Map(", ", ", s"\n$indent)" )
       case xs: Seq[_] if xs.isEmpty => "Nil"
       case xs: Seq[_] =>
         // If the Seq is not too long, pretty print on one line.
