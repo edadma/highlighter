@@ -98,8 +98,16 @@ object HighlighterParser extends RegexParsers {
       case name ~ _ ~ args ~ _ => FunctionRAST( name, args ) } |
     value
 
+  def escapes( s: String ) =
+    s.replace( """\"""", "\"" ).
+      replace( """\n""", "\n" ).
+      replace( """\t""", "\t" ).
+      replace( """\r""", "\r" ).
+      replace( """\\""", "\\" )
+
   def value =
-    "'" ~> "[^']*".r <~ "'" ^^ LiteralRAST |
+    "\"" ~> """(\\\\|\\"|[^"])*""".r <~ "\"" ^^ (s => LiteralRAST( escapes(s) )) |
+    "'" ~> "(''|[^'])*".r <~ "'" ^^ (s => LiteralRAST( s.replace("''", "'") )) |
     "[" ~> onl ~> repsep(code, "," ~ onl) <~ onl <~ "]" ^^ ListRAST |
     ident ^^ VariableRAST
 
