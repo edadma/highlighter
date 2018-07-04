@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
+  "org.scala-lang" % "scala-reflect" % "2.12.6"
 //	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.0",
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
 //	"org.scala-lang.modules" %% "scala-swing" % "2.0.3"

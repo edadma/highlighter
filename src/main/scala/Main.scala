@@ -1,6 +1,8 @@
 //@
 package xyz.hyperreal.highlighter
 
+import scala.reflect.runtime._
+
 
 object Main extends App {
 
@@ -71,12 +73,13 @@ object Main extends App {
       case p: Product =>
         val prefix = p.productPrefix
         // We'll use reflection to get the constructor arg names and values.
-        val cls = p.getClass
-        val fields = cls.getDeclaredFields.filterNot(_.isSynthetic).map(_.getName)
+//        val cls = p.getClass
+//        val fields = cls.getDeclaredFields.filterNot(_.isSynthetic).map(_.getName)
+        val fields = currentMirror.reflect(p).symbol.typeSignature.decls.
+          filter(s => s.isMethod && s.asMethod.isCaseAccessor).toList.map(_.name)
         val values = p.productIterator.toSeq
-        // If we weren't able to match up fields/values, fall back to toString.
-//        if (fields.length != values.length) return ">>>" + p.toString
-        fields.zip(values).toList match {
+        if (fields.length != values.length) sys.error( s"fields and values lists have unequal length: $p" )
+        fields.zip(values) match {
           // If there are no fields, just use the normal String representation.
           case Nil => p.toString
           // If there is just one field, let's just print it as a wrapper.
