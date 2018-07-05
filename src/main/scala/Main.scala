@@ -18,7 +18,7 @@ object Main extends App {
             def define = HighlighterParser( io.Source.fromFile(args(i)) )
           }
 
-        dependencies += (dep.name -> dep)
+        dependencies += (dep.highlighterName -> dep)
       }
 
       def define = definition

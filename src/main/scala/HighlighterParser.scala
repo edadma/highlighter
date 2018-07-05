@@ -77,7 +77,10 @@ object HighlighterParser extends RegexParsers {
     }
 
   def pattern =
-    rep1(guard(not("=>")) ~> segment)
+    rep1(guard(not("=>")) ~> segment) ^^ {
+      case List( p ) => p
+      case s => SeqRAST( s )
+    }
 
   def segment =
     guard(not("{{")) ~> """.+?(?=\s*(?:=>|\{\{))""".r ^^ StaticRAST |

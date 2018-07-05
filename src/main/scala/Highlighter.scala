@@ -22,7 +22,7 @@ abstract class Highlighter {
   val dependencies = new mutable.HashMap[String, Highlighter]
   var trace = false
   val parser = new Parser( Command.standard )
-  val (flags, name, templates, states, classes, includes, equates) = {
+  val (flags, highlighterName, templates, states, classes, includes, equates, named) = {
     var _flags = 0
     var _name: String = getClass.getName
     var _templates: Map[String, AST] = null
@@ -30,6 +30,17 @@ abstract class Highlighter {
     var _classes: Map[String, String] = null
     var _includes: Map[String, Seq[Rule]] = Map()
     var _equates: Map[String, RAST] = Map()
+    var _named: Map[String, MatchRule] = Map()
+
+    def addRules( rules: Seq[Rule] ) =
+      rules foreach {
+        case rule@MatchRule( Some(name), _, _ ) =>
+          if (_named contains name)
+            sys.error( s"duplicate rule name: $name" )
+
+          _named += (name -> rule)
+        case _ =>
+      }
 
     define match {
       case Definition( sections ) =>
@@ -46,8 +57,18 @@ abstract class Highlighter {
               case Unicode => _flags |= Pattern.UNICODE_CASE|Pattern.UNICODE_CHARACTER_CLASS
             }
           case Templates( templates ) => _templates = templates
-          case States( states ) => _states = states map (s => (s.name, s)) toMap
-          case Includes( includes ) => _includes = includes
+          case States( states ) =>
+            _states = states map (s => (s.name, s)) toMap
+
+            states foreach {
+              case State( _, rules ) => addRules( rules )
+            }
+          case Includes( includes ) =>
+            _includes = includes
+
+            includes foreach {
+              case (_, rules) => addRules( rules )
+            }
           case Classes( classes ) => _classes = classes
           case Equates( equates ) => _equates = equates
         }
@@ -65,11 +86,12 @@ abstract class Highlighter {
     if (!_states.contains( "root" ))
       sys.error( "missing root state" )
 
-    (_flags, _name, _templates, _states, if (_classes eq null) Builtin.map else _classes, _includes, _equates) }
+    (_flags, _name, _templates, _states, if (_classes eq null) Builtin.map else _classes, _includes, _equates, _named) }
   val renderer = new Renderer( parser, config )
 
   def eval( rast: RAST ): Any =
     rast match {
+      case SeqRAST( seq ) => seq map eval mkString
       case StaticRAST( s ) => s
       case ListRAST( l ) => l map eval
       case LiteralRAST( v ) => v
@@ -173,9 +195,9 @@ abstract class Highlighter {
       def apply( rule: Rule ): Option[(MatchResult, Seq[Action])] =
         rule match {
           case rule@MatchRule( _, regex, actions ) =>
-            prefix( rule.pattern(Pattern.compile((regex map eval mkString) trim, flags)) ) map (m => (m, actions))
+            prefix( rule.pattern(Pattern.compile(eval(regex).toString.trim, flags)) ) map (m => (m, actions))
           case rule@MismatchRule( regex, actions ) =>
-            prefix( rule.pattern(Pattern.compile((regex map eval mkString) trim, flags)) ) map (_ => (null, actions))
+            prefix( rule.pattern(Pattern.compile(eval(regex).toString.trim, flags)) ) map (_ => (null, actions))
           case DefaultRule( actions ) => Some( (null, actions) )
           case rule@IncludeRule( include ) =>
             search( rule.rules(
@@ -210,7 +232,12 @@ abstract class Highlighter {
               case Pop => stack pop
               case Popn( n ) => for (_ <- 1 to n) stack pop
               case Alter( name, regex ) =>
-
+                named get name match {
+                  case None => sys.error( s"rule not found: $name" )
+                  case Some( rule ) =>
+                    rule.pattern.unset
+                    rule.regex = regex
+                }
             }
 
             highlight( if (info eq null) pos else info.end )

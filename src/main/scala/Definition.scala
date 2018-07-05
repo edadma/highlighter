@@ -28,8 +28,8 @@ case object Multiline extends LexerOption
 case object Unicode extends LexerOption
 
 trait Rule
-case class MatchRule( name: Option[String], var regex: List[RAST], actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
-case class MismatchRule( regex: List[RAST], actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
+case class MatchRule( name: Option[String], var regex: RAST, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
+case class MismatchRule( regex: RAST, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
 case class DefaultRule( actions: Seq[Action] ) extends Rule
 case class IncludeRule( include: String ) extends Rule { val rules = new Const[Seq[Rule]] }
 
