@@ -209,6 +209,8 @@ abstract class Highlighter {
                   } )
               case Pop => stack pop
               case Popn( n ) => for (_ <- 1 to n) stack pop
+              case Alter( name, regex ) =>
+
             }
 
             highlight( if (info eq null) pos else info.end )

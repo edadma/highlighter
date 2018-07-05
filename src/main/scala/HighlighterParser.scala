@@ -141,8 +141,9 @@ object HighlighterParser extends RegexParsers {
     "equates" ~> nl ~> rep1(equate <~ onl) ^^ (ms => Equates( ms toMap ))
 
   def equate =
-    ident ~ "=" ~ code ^^ {
-      case e ~ _ ~ c => (e, c)
+    opt("var") ~ ident ~ "=" ~ code ^^ {
+      case None ~ e ~ _ ~ c => (e, c)
+      case Some( _ ) ~ e ~ _ ~ c => (e, MutableRAST( c ))
     }
 
   def apply( input: io.Source ): Definition =
