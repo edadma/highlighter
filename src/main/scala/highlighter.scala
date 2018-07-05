@@ -14,6 +14,8 @@ package object highlighter {
     private var set = false
     private var value: T = _
 
+    def unset = set = false
+
     def apply( v: => T ) = {
       if (!set)
         synchronized {

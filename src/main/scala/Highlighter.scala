@@ -171,7 +171,7 @@ abstract class Highlighter {
 
       def apply( rule: Rule ): Option[(MatchResult, Seq[Action])] =
         rule match {
-          case rule@MatchRule( regex, actions ) =>
+          case rule@MatchRule( _, regex, actions ) =>
             prefix( rule.pattern(Pattern.compile((regex map eval mkString) trim, flags)) ) map (m => (m, actions))
           case rule@MismatchRule( regex, actions ) =>
             prefix( rule.pattern(Pattern.compile((regex map eval mkString) trim, flags)) ) map (_ => (null, actions))
