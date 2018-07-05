@@ -69,10 +69,10 @@ object HighlighterParser extends RegexParsers {
     }
 
   def rules =
-    matchRule | includeRule | defaultRule
+    guard(not(ident ~ ":")) ~> (matchRule | includeRule | defaultRule)
 
   def matchRule =
-    guard(not(ident ~ ":")) ~> pattern ~ "=>" ~ rep1(action) ^^ {
+    pattern ~ "=>" ~ rep1(action) ^^ {
       case r ~ _ ~ a => MatchRule( r, a )
     }
 
