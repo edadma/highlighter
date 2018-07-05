@@ -73,7 +73,8 @@ abstract class Highlighter {
       case StaticRAST( s ) => s
       case ListRAST( l ) => l map eval
       case LiteralRAST( v ) => v
-      case VariableRAST( v ) => eval(equates(v))
+      case MutableRAST( expr ) => eval( expr )
+      case VariableRAST( v ) => eval( equates(v) )
       case FunctionRAST( "words", List(words: RAST) ) =>
         eval( words ).asInstanceOf[List[_]] map (_.toString) sortWith (_.length > _.length) map Pattern.quote mkString ("(?:", "|", ")")
       case FunctionRAST( f, args ) => sys.error( s"unknown function: $f, $args" )
