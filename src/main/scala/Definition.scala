@@ -43,6 +43,7 @@ case class Popn( n: Int ) extends Action
 case class Transition( name: String ) extends Action { val state = new Const[State] }
 case class Output( s: String, tok: Chars ) extends Action
 case class Alter( name: String, regex: RAST ) extends Action
+case class Assign( name: String, group: Int ) extends Action
 
 trait Chars
 case class Using( dependency: String ) extends Chars { val highlighter = new Const[Highlighter] }

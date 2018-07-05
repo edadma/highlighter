@@ -42,6 +42,8 @@ object HighlighterParser extends RegexParsers {
 
   def ident: Parser[String] = """[a-zA-Z_][\w._-]*"""r
 
+  def number: Parser[Int] = """\d+""".r ^^ (_.toInt)
+
   def integer = """\d+""".r ^^ (_.toInt)
 
   def templateSection =
@@ -119,7 +121,10 @@ object HighlighterParser extends RegexParsers {
     "(" ~> rep1(chars) <~ ")" ^^ Groups |
     ">" ~> ident ^^ Push |
     "^" ~> integer ^^ Popn |
-    "^" ^^^ Pop
+    "^" ^^^ Pop |
+    "<" ~> ident ~ number <~ ">" ^^ {
+      case v ~ g => Assign( v, g )
+    }
 
   def chars =
     "[" ~> ident <~ "]" ^^ Using |

@@ -238,6 +238,15 @@ abstract class Highlighter {
                     rule.pattern.unset
                     rule.regex = regex
                 }
+              case Assign( name, group ) =>
+                equates get name match {
+                  case None => sys.error( s"unknown equate: $name" )
+                  case Some( mut: MutableRAST ) =>
+                    if (info.groupCount < group)
+                      sys.error( s"group index out of range: $group" )
+
+                    mut.expr = LiteralRAST( info.group(group) )
+                }
             }
 
             highlight( if (info eq null) pos else info.end )
