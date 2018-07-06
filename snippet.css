@@ -1,0 +1,4 @@
+.container { width: 980px; margin-right: auto; margin-left: auto; }
+article { padding: 45px; }
+code { font-size: 85%; line-height: 1.45; font-family: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace; }
+.highlight { padding: 16px; background: #f6f8fa; color: #24292e; border-radius: 3px }
