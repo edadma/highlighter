@@ -40,8 +40,7 @@ object Main extends App {
     }
 
     println(
-      """
-        |package xyz.hyperreal.highlighter.highlighters
+      """package xyz.hyperreal.highlighter.highlighters
         |
         |import xyz.hyperreal.backslash._
         |import xyz.hyperreal.highlighter._
@@ -52,7 +51,7 @@ object Main extends App {
     println( s"object ${highlighter.highlighterName}Highlighter extends Highlighter {\n" )
     println( s"  dependencies ++= ${deps.toList.map(d => s""""$d" -> ${d}Highlighter""")}\n" )
     println( "  def define =")
-    println( prettyPrint(definition, depth = 2) )
+    println( "    " + prettyPrint(definition, depth = 2) )
     println( "\n}" )
   } else
     println( highlighter.highlight(io.Source.fromFile(args.last)) )
