@@ -50,6 +50,7 @@ object Main extends App {
         |
       """.stripMargin )
     println( s"object ${highlighter.highlighterName}Highlighter extends Highlighter {\n" )
+    println( s"  dependencies ++= ${deps.toList.map(d => s""""$d" -> ${d}Highlighter""")}\n" )
     println( "  def define =")
     println( prettyPrint(definition, depth = 2) )
     println( "\n}" )
