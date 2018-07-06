@@ -30,9 +30,9 @@ includes
     (<)\s*([\w:.-]+)              => (Punctuation Name.Tag) >tag
     (<)\s*(/)\s*([\w:.-]+)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation)
   backslash:
-    (\\)({{commands1}})  => (Keyword.Reserved Name.Builtin) >command
-    (\\)({{commands2}})  => (Keyword.Reserved Name.Builtin) >command >command
-    (\\)({{commands3}})  => (Keyword.Reserved Name.Builtin) >command >command >command
+    (\\)({{words(commands1)}}\b)  => (Keyword.Reserved Name.Builtin) >command
+    (\\)({{words(commands2)}}\b)  => (Keyword.Reserved Name.Builtin) >command >command
+    (\\)({{words(commands3)}}\b)  => (Keyword.Reserved Name.Builtin) >command >command >command
     {{command}}          => (Keyword.Reserved Name.Builtin)
     \|                   => Keyword.Reserved >pipe
 states
@@ -41,9 +41,9 @@ states
     include backslash
     \{|\} => Keyword.Reserved
   command:
-    (\\)({{commands1}})           => (Keyword.Reserved Name.Builtin)
-    (\\)({{commands2}})           => (Keyword.Reserved Name.Builtin) >command
-    (\\)({{commands3}})           => (Keyword.Reserved Name.Builtin) >command >command
+    (\\)({{words(commands1)}}\b)           => (Keyword.Reserved Name.Builtin)
+    (\\)({{words(commands2)}}\b)           => (Keyword.Reserved Name.Builtin) >command
+    (\\)({{words(commands3)}}\b)           => (Keyword.Reserved Name.Builtin) >command >command
     {{command}}                   => (Keyword.Reserved Name.Builtin) ^
     -?\d+(\.\d+)?|0x[0-9a-fA-F]+  => Number.Integer ^
     \{                            => Keyword.Reserved ^>argument
