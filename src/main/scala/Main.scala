@@ -28,7 +28,7 @@ object Main extends App {
   if (args.length == 1) {
     val deps = new ListBuffer[String]
 
-    highlighter.includes.values.flatten ++ highlighter.states.values flatMap {case State( _, rules ) => rules} flatMap (_.actions) foreach {
+    (highlighter.includes.values.flatten ++ highlighter.states.values.flatMap {case State( _, rules ) => rules}) flatMap (_.actions) foreach {
       case Match( Using(name) ) => deps += name
       case Groups( toks ) =>
         toks foreach {
@@ -47,9 +47,9 @@ object Main extends App {
         |
         |import scala.util.parsing.input.OffsetPosition
         |
-      """.stripMargin )
+        |""".stripMargin )
     println( s"object ${highlighter.highlighterName}Highlighter extends Highlighter {\n" )
-    println( s"  dependencies ++= ${deps.toList.map(d => s""""$d" -> ${d}Highlighter""")}\n" )
+    if (deps nonEmpty) println( s"  dependencies ++= ${deps.toList.map(d => s""""$d" -> ${d}Highlighter""")}\n" )
     println( "  def define =")
     println( "    " + prettyPrint(definition, depth = 2) )
     println( "\n}" )

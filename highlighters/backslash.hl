@@ -65,7 +65,7 @@ states
     (/?)\s*(>)          => (Punctuation Punctuation) ^
   script-content:
     (<)\s*(/)\s*(script)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
-    .+?(?=<\s*/\s*script\s*>)   => [javascript]
+    .+?(?=<\s*/\s*script\s*>)   => [Javascript]
   style-content:
     (<)\s*(/)\s*(style)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
     .+?(?=<\s*/\s*style\s*>)   => [CSS]
