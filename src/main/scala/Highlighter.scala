@@ -3,10 +3,9 @@ package xyz.hyperreal.highlighter
 
 import java.util.regex.{MatchResult, Pattern}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayStack
 import xyz.hyperreal.backslash.{AST, Command, Parser, Renderer}
-
-import scala.collection.mutable
 
 
 abstract class Highlighter {
