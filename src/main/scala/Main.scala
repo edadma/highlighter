@@ -1,5 +1,6 @@
 //@
 package xyz.hyperreal.highlighter
+import scala.collection.mutable.ListBuffer
 
 
 object Main extends App {
@@ -24,9 +25,35 @@ object Main extends App {
       def define = definition
     }
 
-  if (args.length == 1)
-    println( prettyPrint(definition) )
-  else
+  if (args.length == 1) {
+    val deps = new ListBuffer[String]
+
+    highlighter.includes.values.flatten ++ highlighter.states.values flatMap {case State( _, rules ) => rules} flatMap (_.actions) foreach {
+      case Match( Using(name) ) => deps += name
+      case Groups( toks ) =>
+        toks foreach {
+          case Using( name ) => deps += name
+          case _ =>
+        }
+      case Output( _, Using(name) ) => deps += name
+      case _ =>
+    }
+
+    println(
+      """
+        |package xyz.hyperreal.highlighter.highlighters
+        |
+        |import xyz.hyperreal.backslash._
+        |import xyz.hyperreal.highlighter._
+        |
+        |import scala.util.parsing.input.OffsetPosition
+        |
+      """.stripMargin )
+    println( s"object ${highlighter.highlighterName}Highlighter extends Highlighter {\n" )
+    println( "  def define =")
+    println( prettyPrint(definition, depth = 2) )
+    println( "\n}" )
+  } else
     println( highlighter.highlight(io.Source.fromFile(args.last)) )
 
   /**

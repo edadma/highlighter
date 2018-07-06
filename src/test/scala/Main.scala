@@ -10,7 +10,87 @@ object Main extends App {
     """.stripMargin
   val highlighter =
     new Highlighter {
-      def define = HighlighterParser( io.Source.fromFile("highlighters/backslash.hl") )
+//      def define = HighlighterParser( io.Source.fromFile("highlighters/backslash.hl")
+    def define =
+      HighlighterParser(
+        """
+          |highlighter
+          |  name: Backslash
+          |options
+          |  regex: dotall ignorecase
+          |templates
+          |  default: {{ <span class="\class">\escape\text</span> }}
+          |equates
+          |  commands1 = [
+          |    "abs", "ceil", "distinct", "downcase", "escape", "escapeFull", "escapeOnce", "floor", "head", "include",
+          |    "integer", "last", "lit", "markdown", "negate", "nil", "normalize", "number", "reverse", "round", "size", "sort",
+          |    "string", "tail", "timestamp", "trim", "u", "upcase"
+          |    ]
+          |  commands2 = [
+          |    "*", "+", "-", "/", "/=", "<", "<=", "=", ">", ">=", "^", "append", "contains", "date", "default",
+          |    "drop", "join", "max", "min", "range", "rem", "remove", "removeFirst", "split", "take"
+          |    ]
+          |  commands3 = [
+          |    "replace", "replaceFirst", "slice"
+          |    ]
+          |  command = '(\\)((?:[a-zA-Z_][a-zA-Z_.]*| |[^a-zA-Z0-9_\s]+))'
+          |includes
+          |  html:
+          |    &\S*?;                        => Name.Entity
+          |    \<\!\[CDATA\[.*?\]\]\>        => Comment.Preproc
+          |    <!--                          => Comment >comment
+          |    <\?.*?\?>                     => Comment.Preproc
+          |    <![^>]*>                      => Comment.Preproc
+          |    (<)\s*(script)\s*             => (Punctuation Name.Tag) >script-content >tag
+          |    (<)\s*(style)\s*              => (Punctuation Name.Tag) >style-content >tag
+          |    (<)\s*([\w:.-]+)              => (Punctuation Name.Tag) >tag
+          |    (<)\s*(/)\s*([\w:.-]+)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation)
+          |  backslash:
+          |    (\\)({{words(commands1)}}\b)  => (Keyword.Reserved Name.Builtin) >command
+          |    (\\)({{words(commands2)}}\b)  => (Keyword.Reserved Name.Builtin) >command >command
+          |    (\\)({{words(commands3)}}\b)  => (Keyword.Reserved Name.Builtin) >command >command >command
+          |    {{command}}          => (Keyword.Reserved Name.Builtin)
+          |    \|                   => Keyword.Reserved >pipe
+          |states
+          |  root:
+          |    include html
+          |    include backslash
+          |    \{|\} => Keyword.Reserved
+          |  command:
+          |    (\\)({{words(commands1)}}\b)           => (Keyword.Reserved Name.Builtin)
+          |    (\\)({{words(commands2)}}\b)           => (Keyword.Reserved Name.Builtin) >command
+          |    (\\)({{words(commands3)}}\b)           => (Keyword.Reserved Name.Builtin) >command >command
+          |    {{command}}                   => (Keyword.Reserved Name.Builtin) ^
+          |    -?\d+(\.\d+)?|0x[0-9a-fA-F]+  => Number.Integer ^
+          |    \{                            => Keyword.Reserved ^>argument
+          |  argument:
+          |    include html
+          |    include backslash
+          |    \{  => Keyword.Reserved ^
+          |  pipe:
+          |    (\\)({{commands2}})  => (Keyword.Reserved Name.Builtin) >command
+          |    (\\)({{commands3}})  => (Keyword.Reserved Name.Builtin) >command >command
+          |    {{command}}          => (Keyword.Reserved Name.Builtin) ^
+          |  comment:
+          |    [^-]+  => Comment
+          |    -->    => Comment ^
+          |    -      => Comment
+          |  tag:
+          |    ([\w:-]+)\s*(=)\s*  => (Name.Attribute Operator) >attr
+          |    [\w:-]+             => Name.Attribute
+          |    (/?)\s*(>)          => (Punctuation Punctuation) ^
+          |  script-content:
+          |    (<)\s*(/)\s*(script)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
+          |    .+?(?=<\s*/\s*script\s*>)   => [Javascript]
+          |  style-content:
+          |    (<)\s*(/)\s*(style)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
+          |    .+?(?=<\s*/\s*style\s*>)   => [CSS]
+          |  attr:
+          |    ".*?"    => String ^
+          |    '.*?'    => String ^
+          |    [^\s>]+  => String ^
+        """.stripMargin
+      )
     }
 
 //  Console.withOut( new java.io.FileOutputStream("htest1.html") ) {

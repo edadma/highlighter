@@ -27,16 +27,15 @@ case object Dotall extends LexerOption
 case object Multiline extends LexerOption
 case object Unicode extends LexerOption
 
-trait Rule
+trait Rule { val actions: Seq[Action] }
 case class MatchRule( name: Option[String], var regex: RAST, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
 case class MismatchRule( regex: RAST, actions: Seq[Action] ) extends Rule { val pattern = new Const[Pattern] }
 case class DefaultRule( actions: Seq[Action] ) extends Rule
-case class IncludeRule( include: String ) extends Rule { val rules = new Const[Seq[Rule]] }
+case class IncludeRule( include: String ) extends Rule { val actions = Nil; val rules = new Const[Seq[Rule]] }
 
 trait Action
 case class Match( tok: Chars ) extends Action { val ast = new Const[AST] }
 case class Groups( toks: Seq[Chars] ) extends Action { val asts = Seq.fill( toks.length )( new Const[AST] ) }
-//case class Using( fs: Seq[Either[Token, Highlighter]] ) extends Action
 case class Push( name: String ) extends Action { val state = new Const[State] }
 case object Pop extends Action
 case class Popn( n: Int ) extends Action
