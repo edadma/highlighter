@@ -40,6 +40,21 @@ states
     include html
     include backslash
     \{|\} => Keyword.Reserved
+  command:
+    (\\)({{commands1}})           => (Keyword.Reserved Name.Builtin)
+    (\\)({{commands2}})           => (Keyword.Reserved Name.Builtin) >command
+    (\\)({{commands3}})           => (Keyword.Reserved Name.Builtin) >command >command
+    {{command}}                   => (Keyword.Reserved Name.Builtin) ^
+    -?\d+(\.\d+)?|0x[0-9a-fA-F]+  => Number.Integer ^
+    \{                            => Keyword.Reserved ^>argument
+  argument:
+    include html
+    include backslash
+    \{  => Keyword.Reserved ^
+  pipe:
+    (\\)({{commands2}})  => (Keyword.Reserved Name.Builtin) >command
+    (\\)({{commands3}})  => (Keyword.Reserved Name.Builtin) >command >command
+    {{command}}          => (Keyword.Reserved Name.Builtin) ^
   comment:
     [^-]+  => Comment
     -->    => Comment ^
