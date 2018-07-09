@@ -10,17 +10,17 @@ object JavascriptHighlighter extends Highlighter {
 
   def define =
     Definition(List(
-      InfoItems(List(Name("Javascript"))), 
+      InfoItems(List(Name("Javascript"))),
       Options(List(
-        Dotall, 
-        Unicode, 
+        Dotall,
+        Unicode,
         Multiline
-      )), 
+      )),
       Templates(Map(
         "default" -> GroupAST(Vector(
-          LiteralAST("<span class=\""), 
-          VariableAST("class"), 
-          LiteralAST("\">"), 
+          LiteralAST("<span class=\""),
+          VariableAST("class"),
+          LiteralAST("\">"),
           CommandAST(
             pos = OffsetPosition(
               source = "<span class=\"\\class\">\\escape\\text</span>",
@@ -29,105 +29,125 @@ object JavascriptHighlighter extends Highlighter {
             c = xyz.hyperreal.backslash.Command.standard("escape"),
             args = List(VariableAST("text")),
             optional = Map()
-          ), 
+          ),
           LiteralAST("</span>")
         ))
-      )), 
+      )),
       Equates(Map(
-        "JS_IDENT" -> LiteralRAST("[\\p{Alpha}$_][\\p{Alpha}$_0-9]*"), 
+        "JS_IDENT" -> LiteralRAST("[\\p{Alpha}$_][\\p{Alpha}$_0-9]*"),
         "keywords" -> ListRAST(List(
-          LiteralRAST("for"), 
-          LiteralRAST("in"), 
-          LiteralRAST("while"), 
-          LiteralRAST("do"), 
-          LiteralRAST("break"), 
-          LiteralRAST("return"), 
-          LiteralRAST("continue"), 
-          LiteralRAST("switch"), 
-          LiteralRAST("case"), 
-          LiteralRAST("default"), 
-          LiteralRAST("if"), 
-          LiteralRAST("else"), 
-          LiteralRAST("throw"), 
-          LiteralRAST("try"), 
-          LiteralRAST("catch"), 
-          LiteralRAST("finally"), 
-          LiteralRAST("new"), 
-          LiteralRAST("delete"), 
-          LiteralRAST("typeof"), 
-          LiteralRAST("instanceof"), 
-          LiteralRAST("void"), 
-          LiteralRAST("yield"), 
-          LiteralRAST("this"), 
+          LiteralRAST("for"),
+          LiteralRAST("in"),
+          LiteralRAST("while"),
+          LiteralRAST("do"),
+          LiteralRAST("break"),
+          LiteralRAST("return"),
+          LiteralRAST("continue"),
+          LiteralRAST("switch"),
+          LiteralRAST("case"),
+          LiteralRAST("default"),
+          LiteralRAST("if"),
+          LiteralRAST("else"),
+          LiteralRAST("throw"),
+          LiteralRAST("try"),
+          LiteralRAST("catch"),
+          LiteralRAST("finally"),
+          LiteralRAST("new"),
+          LiteralRAST("delete"),
+          LiteralRAST("typeof"),
+          LiteralRAST("instanceof"),
+          LiteralRAST("void"),
+          LiteralRAST("yield"),
+          LiteralRAST("this"),
           LiteralRAST("of")
-        )), 
+        )),
         "reserved" -> ListRAST(List(
-          LiteralRAST("abstract"), 
-          LiteralRAST("boolean"), 
-          LiteralRAST("byte"), 
-          LiteralRAST("char"), 
-          LiteralRAST("class"), 
-          LiteralRAST("const"), 
-          LiteralRAST("debugger"), 
-          LiteralRAST("double"), 
-          LiteralRAST("enum"), 
-          LiteralRAST("export"), 
-          LiteralRAST("extends"), 
-          LiteralRAST("final"), 
-          LiteralRAST("float"), 
-          LiteralRAST("goto"), 
-          LiteralRAST("implements"), 
-          LiteralRAST("import"), 
-          LiteralRAST("int"), 
-          LiteralRAST("interface"), 
-          LiteralRAST("long"), 
-          LiteralRAST("native"), 
-          LiteralRAST("package"), 
-          LiteralRAST("private"), 
-          LiteralRAST("protected"), 
-          LiteralRAST("public"), 
-          LiteralRAST("short"), 
-          LiteralRAST("static"), 
-          LiteralRAST("super"), 
-          LiteralRAST("synchronized"), 
-          LiteralRAST("throws"), 
-          LiteralRAST("transient"), 
+          LiteralRAST("abstract"),
+          LiteralRAST("boolean"),
+          LiteralRAST("byte"),
+          LiteralRAST("char"),
+          LiteralRAST("class"),
+          LiteralRAST("const"),
+          LiteralRAST("debugger"),
+          LiteralRAST("double"),
+          LiteralRAST("enum"),
+          LiteralRAST("export"),
+          LiteralRAST("extends"),
+          LiteralRAST("final"),
+          LiteralRAST("float"),
+          LiteralRAST("goto"),
+          LiteralRAST("implements"),
+          LiteralRAST("import"),
+          LiteralRAST("int"),
+          LiteralRAST("interface"),
+          LiteralRAST("long"),
+          LiteralRAST("native"),
+          LiteralRAST("package"),
+          LiteralRAST("private"),
+          LiteralRAST("protected"),
+          LiteralRAST("public"),
+          LiteralRAST("short"),
+          LiteralRAST("static"),
+          LiteralRAST("super"),
+          LiteralRAST("synchronized"),
+          LiteralRAST("throws"),
+          LiteralRAST("transient"),
           LiteralRAST("volatile")
-        )), 
+        )),
         "builtin" -> ListRAST(List(
-          LiteralRAST("Array"), 
-          LiteralRAST("Boolean"), 
-          LiteralRAST("Date"), 
-          LiteralRAST("Error"), 
-          LiteralRAST("Function"), 
-          LiteralRAST("Math"), 
-          LiteralRAST("netscape"), 
-          LiteralRAST("Number"), 
-          LiteralRAST("Object"), 
-          LiteralRAST("Packages"), 
-          LiteralRAST("RegExp"), 
-          LiteralRAST("String"), 
-          LiteralRAST("Promise"), 
-          LiteralRAST("Proxy"), 
-          LiteralRAST("sun"), 
-          LiteralRAST("decodeURI"), 
-          LiteralRAST("decodeURIComponent"), 
-          LiteralRAST("encodeURI"), 
-          LiteralRAST("encodeURIComponent"), 
-          LiteralRAST("Error"), 
-          LiteralRAST("eval"), 
-          LiteralRAST("isFinite"), 
-          LiteralRAST("isNaN"), 
-          LiteralRAST("isSafeInteger"), 
-          LiteralRAST("parseFloat"), 
-          LiteralRAST("parseInt"), 
-          LiteralRAST("document"), 
-          LiteralRAST("this"), 
+          LiteralRAST("Array"),
+          LiteralRAST("Boolean"),
+          LiteralRAST("Date"),
+          LiteralRAST("Error"),
+          LiteralRAST("Function"),
+          LiteralRAST("Math"),
+          LiteralRAST("netscape"),
+          LiteralRAST("Number"),
+          LiteralRAST("Object"),
+          LiteralRAST("Packages"),
+          LiteralRAST("RegExp"),
+          LiteralRAST("String"),
+          LiteralRAST("Promise"),
+          LiteralRAST("Proxy"),
+          LiteralRAST("sun"),
+          LiteralRAST("decodeURI"),
+          LiteralRAST("decodeURIComponent"),
+          LiteralRAST("encodeURI"),
+          LiteralRAST("encodeURIComponent"),
+          LiteralRAST("Error"),
+          LiteralRAST("eval"),
+          LiteralRAST("isFinite"),
+          LiteralRAST("isNaN"),
+          LiteralRAST("isSafeInteger"),
+          LiteralRAST("parseFloat"),
+          LiteralRAST("parseInt"),
+          LiteralRAST("document"),
+          LiteralRAST("this"),
           LiteralRAST("window")
         ))
-      )), 
+      )),
       Includes(Map(
         "commentsandwhitespace" -> List(
+          MatchRule(
+            name = None,
+            regex = StaticRAST("\\s+"),
+            actions = List(
+              Match(Token(
+                clas = "Text",
+                template = "default"
+              ))
+            )
+          ),
+          MatchRule(
+            name = None,
+            regex = StaticRAST("<!--"),
+            actions = List(
+              Match(Token(
+                clas = "Comment",
+                template = "default"
+              ))
+            )
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("/\\*.*?\\*/"),
@@ -137,8 +157,18 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
+          ),
+          MatchRule(
+            name = None,
+            regex = StaticRAST("#.*?\\n"),
+            actions = List(
+              Match(Token(
+                clas = "Comment.Single",
+                template = "default"
+              ))
+            )
           )
-        ), 
+        ),
         "root" -> List(
           MatchRule(
             name = None,
@@ -149,7 +179,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("^(?=\\s|/|<!--)"),
@@ -157,11 +187,11 @@ object JavascriptHighlighter extends Highlighter {
               Match(Token(
                 clas = "Text",
                 template = "default"
-              )), 
+              )),
               Push("slashstartsregex")
             )
-          ), 
-          IncludeRule("commentsandwhitespace"), 
+          ),
+          IncludeRule("commentsandwhitespace"),
           MatchRule(
             name = None,
             regex = StaticRAST("(\\.\\d+|[0-9]+\\.[0-9]*)([eE][-+]?[0-9]+)?"),
@@ -171,7 +201,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("0[bB][01]+"),
@@ -181,7 +211,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("0[oO][0-7]+"),
@@ -191,7 +221,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("0[xX][0-9a-fA-F]+"),
@@ -201,7 +231,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("[0-9]+"),
@@ -211,7 +241,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("\\.\\.\\.|=\\>"),
@@ -221,7 +251,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("\\+\\+|--|~|&&|\\?|:|\\|\\||\\\\(?=\\n)|(<<|>>>?|==?|!=?|[-<>+*%&|^/])=?"),
@@ -229,10 +259,10 @@ object JavascriptHighlighter extends Highlighter {
               Match(Token(
                 clas = "Operator",
                 template = "default"
-              )), 
+              )),
               Push("slashstartsregex")
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("[{(\\[;,]"),
@@ -240,10 +270,10 @@ object JavascriptHighlighter extends Highlighter {
               Match(Token(
                 clas = "Punctuation",
                 template = "default"
-              )), 
+              )),
               Push("slashstartsregex")
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("[})\\].]"),
@@ -253,25 +283,25 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = SeqRAST(List(
-              StaticRAST("("), 
+              StaticRAST("("),
               FunctionRAST(
                 f = "words",
                 args = List(VariableRAST("keywords"))
-              ), 
+              ),
               StaticRAST(")\\b")
             )),
             actions = List(
               Match(Token(
                 clas = "Keyword",
                 template = "default"
-              )), 
+              )),
               Push("slashstartsregex")
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("(var|let|with|function)\\b"),
@@ -279,18 +309,18 @@ object JavascriptHighlighter extends Highlighter {
               Match(Token(
                 clas = "Keyword.Declaration",
                 template = "default"
-              )), 
+              )),
               Push("slashstartsregex")
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = SeqRAST(List(
-              StaticRAST("("), 
+              StaticRAST("("),
               FunctionRAST(
                 f = "words",
                 args = List(VariableRAST("reserved"))
-              ), 
+              ),
               StaticRAST(")\\b")
             )),
             actions = List(
@@ -299,7 +329,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("(true|false|null|NaN|Infinity|undefined)\\b"),
@@ -309,15 +339,15 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = SeqRAST(List(
-              StaticRAST("("), 
+              StaticRAST("("),
               FunctionRAST(
                 f = "words",
                 args = List(VariableRAST("builtin"))
-              ), 
+              ),
               StaticRAST(")\\b")
             )),
             actions = List(
@@ -326,7 +356,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("JS_IDENT"),
@@ -336,7 +366,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("\"(\\\\\\\\|\\\\\"|[^\"])*\""),
@@ -346,7 +376,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("'(\\\\\\\\|\\\\'|[^'])*'"),
@@ -356,7 +386,7 @@ object JavascriptHighlighter extends Highlighter {
                 template = "default"
               ))
             )
-          ), 
+          ),
           MatchRule(
             name = None,
             regex = StaticRAST("`"),
@@ -364,17 +394,17 @@ object JavascriptHighlighter extends Highlighter {
               Match(Token(
                 clas = "String.Backtick",
                 template = "default"
-              )), 
+              )),
               Push("interp")
             )
           )
         )
-      )), 
+      )),
       States(List(
         State(
           name = "slashstartsregex",
           rules = List(
-            IncludeRule("commentsandwhitespace"), 
+            IncludeRule("commentsandwhitespace"),
             MatchRule(
               name = None,
               regex = StaticRAST("/(\\\\.|[^[/\\\\\\n]|\\[(\\\\.|[^\\]\\\\\\n])*])+/([gimuy]+\\b|\\B)c"),
@@ -382,10 +412,10 @@ object JavascriptHighlighter extends Highlighter {
                 Match(Token(
                   clas = "String.Regex",
                   template = "default"
-                )), 
+                )),
                 Pop
               )
-            ), 
+            ),
             MatchRule(
               name = None,
               regex = StaticRAST("(?=/)"),
@@ -393,14 +423,14 @@ object JavascriptHighlighter extends Highlighter {
                 Match(Token(
                   clas = "Text",
                   template = "default"
-                )), 
-                Pop, 
+                )),
+                Pop,
                 Push("badregex")
               )
-            ), 
+            ),
             DefaultRule(List(Pop))
           )
-        ), 
+        ),
         State(
           name = "badregex",
           rules = List(
@@ -411,16 +441,16 @@ object JavascriptHighlighter extends Highlighter {
                 Match(Token(
                   clas = "Text",
                   template = "default"
-                )), 
+                )),
                 Pop
               )
             )
           )
-        ), 
+        ),
         State(
           name = "root",
           rules = List(IncludeRule("root"))
-        ), 
+        ),
         State(
           name = "interp",
           rules = List(
@@ -431,10 +461,10 @@ object JavascriptHighlighter extends Highlighter {
                 Match(Token(
                   clas = "String.Backtick",
                   template = "default"
-                )), 
+                )),
                 Pop
               )
-            ), 
+            ),
             MatchRule(
               name = None,
               regex = StaticRAST("\\\\\\\\"),
@@ -444,7 +474,7 @@ object JavascriptHighlighter extends Highlighter {
                   template = "default"
                 ))
               )
-            ), 
+            ),
             MatchRule(
               name = None,
               regex = StaticRAST("\\\\`"),
@@ -454,7 +484,7 @@ object JavascriptHighlighter extends Highlighter {
                   template = "default"
                 ))
               )
-            ), 
+            ),
             MatchRule(
               name = None,
               regex = StaticRAST("\\$\\{"),
@@ -462,10 +492,10 @@ object JavascriptHighlighter extends Highlighter {
                 Match(Token(
                   clas = "String.Interpol",
                   template = "default"
-                )), 
+                )),
                 Push("interp-inside")
               )
-            ), 
+            ),
             MatchRule(
               name = None,
               regex = StaticRAST("\\$"),
@@ -475,7 +505,7 @@ object JavascriptHighlighter extends Highlighter {
                   template = "default"
                 ))
               )
-            ), 
+            ),
             MatchRule(
               name = None,
               regex = StaticRAST("[^`\\\\$]+"),
@@ -487,7 +517,7 @@ object JavascriptHighlighter extends Highlighter {
               )
             )
           )
-        ), 
+        ),
         State(
           name = "interp-inside",
           rules = List(
@@ -498,10 +528,10 @@ object JavascriptHighlighter extends Highlighter {
                 Match(Token(
                   clas = "String.Interpol",
                   template = "default"
-                )), 
+                )),
                 Pop
               )
-            ), 
+            ),
             IncludeRule("root")
           )
         )
