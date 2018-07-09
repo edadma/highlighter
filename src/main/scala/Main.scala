@@ -19,7 +19,7 @@ object Main extends App {
             def define = HighlighterParser( io.Source.fromFile(args(i)) )
           }
 
-        dependencies += (dep.highlighterName -> dep)
+        Highlighters.register( dep )
       }
 
       def define = definition
@@ -49,7 +49,6 @@ object Main extends App {
         |
         |""".stripMargin )
     println( s"object ${highlighter.highlighterName}Highlighter extends Highlighter {\n" )
-    if (deps nonEmpty) println( s"  dependencies ++= ${deps.toList.map(d => s""""$d" -> ${d}Highlighter""")}\n" )
     println( "  def define =")
     println( "    " + prettyPrint(definition, depth = 2) )
     println( "\n}" )

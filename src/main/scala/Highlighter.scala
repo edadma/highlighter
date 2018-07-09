@@ -18,7 +18,6 @@ abstract class Highlighter {
       "rounding" -> "HALF_EVEN"
     )
 
-  val dependencies = new mutable.HashMap[String, Highlighter]
   var trace = false
   val parser = new Parser( Command.standard )
   val (flags, highlighterName, templates, states, classes, includes, equates, named) = {
@@ -153,7 +152,7 @@ abstract class Highlighter {
           case Token( c@("text"|"Text"), _ ) => out( c, "text" )
           case Token( c, t ) => out( c, t )
           case u@Using( dependency ) => u.highlighter(
-            dependencies get dependency match {
+            Highlighters.registered( dependency ) match {
               case None => sys.error( s"dependency not found: $dependency" )
               case Some( highlighter ) => highlighter
             } ).highlight( s, output )

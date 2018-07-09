@@ -8,8 +8,6 @@ import scala.util.parsing.input.OffsetPosition
 
 object BackslashHighlighter extends Highlighter {
 
-  dependencies ++= List("CSS" -> CSSHighlighter, "Javascript" -> JavascriptHighlighter)
-
   def define =
     Definition(List(
       InfoItems(List(Name("Backslash"))), 
