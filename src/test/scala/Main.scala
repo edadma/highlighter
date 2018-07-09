@@ -10,6 +10,7 @@ object Main extends App {
     """.stripMargin
   val highlighter =
     new Highlighter {
+      trace = true
 //      def define = HighlighterParser( io.Source.fromFile("highlighters/backslash.hl")
     def define =
       HighlighterParser(
@@ -44,7 +45,7 @@ object Main extends App {
           |        /\*.*?\*/ => Comment.Multiline
           |        #.*?\n => Comment.Single
           |    root:
-          |        \A#! ?/.*?\n => Comment.Hashbang  # recognized by node.js
+          |        \A#! ?/.*?\n => Comment.Hashbang
           |        ^(?=\s|/|<!--) => Text >slashstartsregex
           |        include commentsandwhitespace
           |        (\.\d+|[0-9]+\.[0-9]*)([eE][-+]?[0-9]+)? => Number.Float
@@ -61,7 +62,7 @@ object Main extends App {
           |        ({{ words( reserved ) }})\b => Keyword.Reserved
           |        (true|false|null|NaN|Infinity|undefined)\b => Keyword.Constant
           |        ({{ words( builtin ) }})\b => Name.Builtin
-          |        JS_IDENT => Name.Other
+          |        {{JS_IDENT}} => Name.Other
           |        "(\\\\|\\"|[^"])*" => String.Double
           |        '(\\\\|\\'|[^'])*' => String.Single
           |        ` => String.Backtick >interp
@@ -83,7 +84,6 @@ object Main extends App {
           |        \$ => String.Backtick
           |        [^`\\$]+ => String.Backtick
           |    interp-inside:
-          |        # TODO: should this include single-line comments and allow nesting strings?
           |        \} => String.Interpol ^
           |        include root
         """.stripMargin

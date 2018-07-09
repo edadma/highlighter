@@ -190,7 +190,9 @@ abstract class Highlighter {
         None
       }
 
-      def apply( rule: Rule ): Option[(MatchResult, Seq[Action])] =
+      def apply( rule: Rule ): Option[(MatchResult, Seq[Action])] = {
+        dotrace( s"trying rule $rule" )
+
         rule match {
           case rule@MatchRule( _, regex, actions ) =>
             prefix( rule.pattern(Pattern.compile(eval(regex).toString.trim, flags)) ) map (m => (m, actions))
@@ -204,6 +206,7 @@ abstract class Highlighter {
                 case Some( r ) => r
               } ), apply )
         }
+      }
 
       dotrace( s"search: pos = $pos" )
 

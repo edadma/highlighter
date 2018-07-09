@@ -154,8 +154,8 @@ equates
     'x-small', 'xx-large', 'xx-small', 'zoom-in', 'zoom-out'
     ]
 
-# List of extended color keywords obtained from:
-# https://drafts.csswg.org/css-color/#named-colors
+// List of extended color keywords obtained from:
+// https://drafts.csswg.org/css-color/#named-colors
   _color_keywords = [
     'aliceblue', 'antiquewhite', 'aqua', 'aquamarine', 'azure', 'beige',
     'bisque', 'black', 'blanchedalmond', 'blue', 'blueviolet', 'brown',
@@ -187,7 +187,7 @@ equates
     'violet', 'wheat', 'white', 'whitesmoke', 'yellow', 'yellowgreen', 'transparent'
     ]
 
-# List of other keyword values from other sources:
+// List of other keyword values from other sources:
   _other_keyword_values = [
     'above', 'aural', 'behind', 'bidi-override', 'center-left', 'center-right',
     'cjk-ideographic', 'continuous', 'crop', 'cross', 'embed', 'far-left',
@@ -200,7 +200,7 @@ equates
     'x-low', 'x-soft', 'yes', 'pre', 'pre-wrap', 'pre-line'
     ]
 
-# List of functional notation and function keyword values:
+// List of functional notation and function keyword values:
   _functional_notation_keyword_values = [
     'attr', 'blackness', 'blend', 'blenda', 'blur', 'brightness', 'calc',
     'circle', 'color-mod', 'contrast', 'counter', 'cubic-bezier', 'device-cmyk',
@@ -215,10 +215,10 @@ equates
     'translateZ', 'whiteness'
     ]
 
-# Note! Handle url(...) separately.
+// Note! Handle url(...) separately.
 
-# List of units obtained from:
-# https://www.w3.org/TR/css3-values/
+// List of units obtained from:
+// https://www.w3.org/TR/css3-values/
   _angle_units = [
     'deg', 'grad', 'rad', 'turn'
     ]
@@ -282,7 +282,7 @@ states
     {{ words(_keyword_values) }}\b                            => Keyword.Constant
     {{ words(_other_keyword_values) }}\b                      => Keyword.Constant
     {{ words(_color_keywords) }}\b                            => Keyword.Constant
-    {{ words(_css_properties) }}\b                            => Keyword # for transition-property etc.
+    {{ words(_css_properties) }}\b                            => Keyword // for transition-property etc.
     \!important                                               => Comment.Preproc
     /\*(?:.|\n)*?\*/                                          => Comment
 
