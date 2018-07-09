@@ -25,6 +25,8 @@ equates
         ]
 includes
     commentsandwhitespace:
+        \s+ => Text
+        <!-- => Comment
         /\*.*?\*/ => Comment.Multiline
         #.*?\n => Comment.Single
     root:
