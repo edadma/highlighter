@@ -6,7 +6,7 @@ object Main extends App {
 //  val input = io.Source.fromFile( "test.html" ) mkString
   val input =
     """
-      |\asdf
+      |asdf
     """.stripMargin
   val highlighter =
     new Highlighter {
@@ -15,80 +15,77 @@ object Main extends App {
       HighlighterParser(
         """
           |highlighter
-          |  name: Backslash
+          |    name: Javascript
           |options
-          |  regex: dotall ignorecase
+          |    regex: dotall unicode multiline
           |templates
-          |  default: {{ <span class="\class">\escape\text</span> }}
+          |    default: {{ <span class="\class">\escape\text</span> }}
           |equates
-          |  commands1 = [
-          |    "abs", "ceil", "distinct", "downcase", "escape", "escapeFull", "escapeOnce", "floor", "head", "include",
-          |    "integer", "last", "lit", "markdown", "negate", "nil", "normalize", "number", "reverse", "round", "size", "sort",
-          |    "string", "tail", "timestamp", "trim", "u", "upcase"
-          |    ]
-          |  commands2 = [
-          |    "*", "+", "-", "/", "/=", "<", "<=", "=", ">", ">=", "^", "append", "contains", "date", "default",
-          |    "drop", "join", "max", "min", "range", "rem", "remove", "removeFirst", "split", "take"
-          |    ]
-          |  commands3 = [
-          |    "replace", "replaceFirst", "slice"
-          |    ]
-          |  command = '(\\)((?:[a-zA-Z_][a-zA-Z_.]*| |[^a-zA-Z0-9_\s]+))'
+          |    JS_IDENT = '[\p{Alpha}$_][\p{Alpha}$_0-9]*'
+          |    keywords = [
+          |        'for', 'in', 'while', 'do', 'break', 'return', 'continue', 'switch', 'case', 'default', 'if', 'else',
+          |        'throw', 'try', 'catch', 'finally', 'new', 'delete', 'typeof', 'instanceof', 'void', 'yield', 'this', 'of'
+          |        ]
+          |    reserved = [
+          |        'abstract', 'boolean', 'byte', 'char', 'class', 'const', 'debugger', 'double', 'enum', 'export',
+          |        'extends', 'final', 'float', 'goto', 'implements', 'import', 'int', 'interface', 'long', 'native',
+          |        'package', 'private', 'protected', 'public', 'short', 'static', 'super', 'synchronized', 'throws',
+          |        'transient', 'volatile'
+          |        ]
+          |    builtin = [
+          |        'Array', 'Boolean', 'Date', 'Error', 'Function', 'Math', 'netscape',
+          |        'Number', 'Object', 'Packages', 'RegExp', 'String', 'Promise', 'Proxy', 'sun', 'decodeURI',
+          |        'decodeURIComponent', 'encodeURI', 'encodeURIComponent',
+          |        'Error', 'eval', 'isFinite', 'isNaN', 'isSafeInteger', 'parseFloat', 'parseInt',
+          |        'document', 'this', 'window'
+          |        ]
           |includes
-          |  html:
-          |    &\S*?;                        => Name.Entity
-          |    \<\!\[CDATA\[.*?\]\]\>        => Comment.Preproc
-          |    <!--                          => Comment >comment
-          |    <\?.*?\?>                     => Comment.Preproc
-          |    <![^>]*>                      => Comment.Preproc
-          |    (<)\s*(script)\s*             => (Punctuation Name.Tag) >script-content >tag
-          |    (<)\s*(style)\s*              => (Punctuation Name.Tag) >style-content >tag
-          |    (<)\s*([\w:.-]+)              => (Punctuation Name.Tag) >tag
-          |    (<)\s*(/)\s*([\w:.-]+)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation)
-          |  backslash:
-          |    (\\)({{words(commands1)}}\b)  => (Keyword.Reserved Name.Builtin) >command
-          |    (\\)({{words(commands2)}}\b)  => (Keyword.Reserved Name.Builtin) >command >command
-          |    (\\)({{words(commands3)}}\b)  => (Keyword.Reserved Name.Builtin) >command >command >command
-          |    {{command}}          => (Keyword.Reserved Name.Builtin)
-          |    \|                   => Keyword.Reserved >pipe
+          |    commentsandwhitespace:
+          |        /\*.*?\*/ => Comment.Multiline
+          |        #.*?\n => Comment.Single
+          |    root:
+          |        \A#! ?/.*?\n => Comment.Hashbang  # recognized by node.js
+          |        ^(?=\s|/|<!--) => Text >slashstartsregex
+          |        include commentsandwhitespace
+          |        (\.\d+|[0-9]+\.[0-9]*)([eE][-+]?[0-9]+)? => Number.Float
+          |        0[bB][01]+ => Number.Bin
+          |        0[oO][0-7]+ => Number.Oct
+          |        0[xX][0-9a-fA-F]+ => Number.Hex
+          |        [0-9]+ => Number.Integer
+          |        \.\.\.|=\> => Punctuation
+          |        \+\+|--|~|&&|\?|:|\|\||\\(?=\n)|(<<|>>>?|==?|!=?|[-<>+*%&|^/])=? => Operator >slashstartsregex
+          |        [{(\[;,] => Punctuation >slashstartsregex
+          |        [})\].] => Punctuation
+          |        ({{ words( keywords ) }})\b => Keyword >slashstartsregex
+          |        (var|let|with|function)\b => Keyword.Declaration >slashstartsregex
+          |        ({{ words( reserved ) }})\b => Keyword.Reserved
+          |        (true|false|null|NaN|Infinity|undefined)\b => Keyword.Constant
+          |        ({{ words( builtin ) }})\b => Name.Builtin
+          |        JS_IDENT => Name.Other
+          |        "(\\\\|\\"|[^"])*" => String.Double
+          |        '(\\\\|\\'|[^'])*' => String.Single
+          |        ` => String.Backtick >interp
           |states
-          |  root:
-          |    include html
-          |    include backslash
-          |    \{|\} => Keyword.Reserved
-          |  command:
-          |    (\\)({{words(commands1)}}\b)           => (Keyword.Reserved Name.Builtin)
-          |    (\\)({{words(commands2)}}\b)           => (Keyword.Reserved Name.Builtin) >command
-          |    (\\)({{words(commands3)}}\b)           => (Keyword.Reserved Name.Builtin) >command >command
-          |    {{command}}                   => (Keyword.Reserved Name.Builtin) ^
-          |    -?\d+(\.\d+)?|0x[0-9a-fA-F]+  => Number.Integer ^
-          |    \{                            => Keyword.Reserved ^>argument
-          |  argument:
-          |    include html
-          |    include backslash
-          |    \{  => Keyword.Reserved ^
-          |  pipe:
-          |    (\\)({{commands2}})  => (Keyword.Reserved Name.Builtin) >command
-          |    (\\)({{commands3}})  => (Keyword.Reserved Name.Builtin) >command >command
-          |    {{command}}          => (Keyword.Reserved Name.Builtin) ^
-          |  comment:
-          |    [^-]+  => Comment
-          |    -->    => Comment ^
-          |    -      => Comment
-          |  tag:
-          |    ([\w:-]+)\s*(=)\s*  => (Name.Attribute Operator) >attr
-          |    [\w:-]+             => Name.Attribute
-          |    (/?)\s*(>)          => (Punctuation Punctuation) ^
-          |  script-content:
-          |    (<)\s*(/)\s*(script)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
-          |    .+?(?=<\s*/\s*script\s*>)   => [Javascript]
-          |  style-content:
-          |    (<)\s*(/)\s*(style)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
-          |    .+?(?=<\s*/\s*style\s*>)   => [CSS]
-          |  attr:
-          |    ".*?"    => String ^
-          |    '.*?'    => String ^
-          |    [^\s>]+  => String ^
+          |    slashstartsregex:
+          |        include commentsandwhitespace
+          |        /(\\.|[^[/\\\n]|\[(\\.|[^\]\\\n])*])+/([gimuy]+\b|\B)c=> String.Regex ^
+          |        (?=/) => Text ^>badregex
+          |        => ^
+          |    badregex:
+          |        \n => Text ^
+          |    root:
+          |        include root
+          |    interp:
+          |        ` => String.Backtick ^
+          |        \\\\ => String.Backtick
+          |        \\` => String.Backtick
+          |        \$\{ => String.Interpol >interp-inside
+          |        \$ => String.Backtick
+          |        [^`\\$]+ => String.Backtick
+          |    interp-inside:
+          |        # TODO: should this include single-line comments and allow nesting strings?
+          |        \} => String.Interpol ^
+          |        include root
         """.stripMargin
       )
     }
