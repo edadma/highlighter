@@ -28,7 +28,7 @@ includes
         /\*.*?\*/ => Comment.Multiline
         #.*?\n => Comment.Single
     root:
-        \A#! ?/.*?\n => Comment.Hashbang  // recognized by node.js
+        \A#! ?/.*?\n => Comment.Hashbang  ## recognized by node.js
         ^(?=\s|/|<!--) => Text >slashstartsregex
         include commentsandwhitespace
         (\.\d+|[0-9]+\.[0-9]*)([eE][-+]?[0-9]+)? => Number.Float
@@ -67,6 +67,6 @@ states
         \$ => String.Backtick
         [^`\\$]+ => String.Backtick
     interp-inside:
-        // TODO: should this include single-line comments and allow nesting strings?
+        ## TODO: should this include single-line comments and allow nesting strings?
         \} => String.Interpol ^
         include root

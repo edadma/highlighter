@@ -11,7 +11,8 @@ object Main extends App {
   val highlighter =
     new Highlighter {
       trace = true
-//      def define = HighlighterParser( io.Source.fromFile("highlighters/backslash.hl")
+      tracelimit = 15
+      //      def define = HighlighterParser( io.Source.fromFile("highlighters/backslash.hl")
     def define =
       HighlighterParser(
         """

@@ -19,6 +19,7 @@ abstract class Highlighter {
     )
 
   var trace = false
+  var tracelimit = 50
   val parser = new Parser( Command.standard )
   val (flags, highlighterName, templates, states, classes, includes, equates, named) = {
     var _flags = 0
@@ -117,10 +118,15 @@ abstract class Highlighter {
     val chunk = new StringBuilder
     var prevclass: String = null
     var prevast: AST = null
+    var tracecount = 0
 
     def dotrace( s: Any ) =
       if (trace)
-        println( s )
+        if (tracelimit == 0 || tracelimit > 0 && tracecount < tracelimit) {
+          println( s )
+          tracecount += 1
+        } else if (tracelimit > 0 && tracecount == tracelimit)
+          sys.exit
 
     def output( s: String, clas: Chars ) {
       def out( cls: String, tmp: String ): Unit = {
@@ -225,6 +231,8 @@ abstract class Highlighter {
                 for ((t, i) <- toks zipWithIndex)
                   output( code.substring(info.start(i + 1), info.end(i + 1)), t )
               case action@Push( statename ) =>
+                dotrace( s"pushing state $statename" )
+
                 stack push action.state(
                   states get statename match {
                     case None => sys.error( s"unknown state: $statename" )
