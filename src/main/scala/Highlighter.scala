@@ -120,7 +120,7 @@ abstract class Highlighter {
     var prevast: AST = null
     var tracecount = 0
 
-    def dotrace( s: Any ) =
+    def tracing( s: Any ) =
       if (trace)
         if (tracelimit == 0 || tracelimit > 0 && tracecount < tracelimit) {
           println( s )
@@ -152,7 +152,7 @@ abstract class Highlighter {
       if (send ne null)
         send( s, clas )
       else if (s nonEmpty) {
-        dotrace( "output",  s""""$s", $clas""" )
+        tracing( "output",  s""""$s", $clas""" )
 
         clas match {
           case Token( c@("text"|"Text"), _ ) => out( c, "text" )
@@ -197,7 +197,7 @@ abstract class Highlighter {
       }
 
       def apply( rule: Rule ): Option[(MatchResult, Seq[Action])] = {
-        dotrace( s"trying rule $rule" )
+        tracing( s"trying rule $rule" )
 
         rule match {
           case rule@MatchRule( _, regex, actions ) =>
@@ -214,7 +214,7 @@ abstract class Highlighter {
         }
       }
 
-      dotrace( s"search: pos = $pos" )
+      tracing( s"search: pos = $pos" )
 
       if (pos < code.length)
         search( stack.top.rules, apply ) match {
@@ -222,6 +222,11 @@ abstract class Highlighter {
             text( code charAt pos toString )
             highlight( pos + 1 )
           case Some( (info, actions) ) =>
+            if (info eq null)
+              tracing( s"actions: $actions" )
+            else
+              tracing( s"match (${info.start}) [${info.group}]; actions: $actions")
+
             actions foreach {
               case Match( tok ) =>
                 output( code.substring(info.start, info.end), tok )
@@ -231,7 +236,7 @@ abstract class Highlighter {
                 for ((t, i) <- toks zipWithIndex)
                   output( code.substring(info.start(i + 1), info.end(i + 1)), t )
               case action@Push( statename ) =>
-                dotrace( s"pushing state $statename" )
+                tracing( s"pushing state $statename" )
 
                 stack push action.state(
                   states get statename match {

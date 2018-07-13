@@ -5,7 +5,7 @@ Highlighter
 [![Build status](https://ci.appveyor.com/api/projects/status/iophnk3cycjtf8px?svg=true)](https://ci.appveyor.com/project/edadma/highlighter)
 [![Coverage Status](https://coveralls.io/repos/github/edadma/highlighter/badge.svg?branch=master)](https://coveralls.io/github/edadma/highlighter?branch=master)
 [![License](https://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/edadma/highlighter/blob/master/LICENSE)
-[![Version](https://img.shields.io/badge/latest_release-v0.1.3-orange.svg)](https://github.com/edadma/highlighter/releases/tag/v0.1.3)
+[![Version](https://img.shields.io/badge/latest_release-v0.1.4-orange.svg)](https://github.com/edadma/highlighter/releases/tag/v0.1.4)
 
 *Highlighter* is a regular expression based syntax highlighter library written in [Scala](http://scala-lang.org). Highlighter is inspired by [Pygments](http://pygments.org/), and it is not difficult to port Pygments lexers to Highlighter.  Highlighter has a convenient definition language to make it easier to develop new highlighters.
 
@@ -97,7 +97,7 @@ Use the following definition to use Highlighter in your Maven project:
 <dependency>
   <groupId>xyz.hyperreal</groupId>
   <artifactId>highlighter</artifactId>
-  <version>0.1.3</version>
+  <version>0.1.4</version>
 </dependency>
 ```
 
@@ -106,14 +106,14 @@ Add the following to your `build.sbt` file to use Highlighter in your SBT projec
 ```sbt
 resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
 
-libraryDependencies += "xyz.hyperreal" %% "highlighter" % "0.1.3"
+libraryDependencies += "xyz.hyperreal" %% "highlighter" % "0.1.4"
 ```
 
 ### Executable
 
-An executable can be downloaded from [here](https://dl.bintray.com/edadma/generic/highlighter-0.1.3.jar). *You do not need* the Scala library for it to work because the JAR already contains all dependencies. You just need Java 8+ installed.
+An executable can be downloaded from [here](https://dl.bintray.com/edadma/generic/highlighter-0.1.4.jar). *You do not need* the Scala library for it to work because the JAR already contains all dependencies. You just need Java 8+ installed.
 
-Run it as a normal Java executable JAR with the command `java -jar highlighter-0.1.3.jar <definition>... [<input>]` in the folder where you downloaded the file, where *definition* is the name of the highlighter definition file, and <input> is the file containing the code to be highlighted.  If multiple definition files are given, the first one is used for highlighting and the others are passed to it as dependencies.
+Run it as a normal Java executable JAR with the command `java -jar highlighter-0.1.4.jar <definition>... [<input>]` in the folder where you downloaded the file, where *definition* is the name of the highlighter definition file, and <input> is the file containing the code to be highlighted.  If multiple definition files are given, the first one is used for highlighting and the others are passed to it as dependencies.
 
 Building
 --------

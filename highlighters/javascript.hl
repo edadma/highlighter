@@ -31,7 +31,7 @@ includes
         #.*?\n => Comment.Single
     root:
         \A#! ?/.*?\n => Comment.Hashbang  ## recognized by node.js
-        ^(?=\s|/|<!--) => Text >slashstartsregex
+##        ^(?=\s|/|<!--) => Text >slashstartsregex
         include commentsandwhitespace
         (\.\d+|[0-9]+\.[0-9]*)([eE][-+]?[0-9]+)? => Number.Float
         0[bB][01]+ => Number.Bin
@@ -47,14 +47,14 @@ includes
         ({{ words( reserved ) }})\b => Keyword.Reserved
         (true|false|null|NaN|Infinity|undefined)\b => Keyword.Constant
         ({{ words( builtin ) }})\b => Name.Builtin
-        JS_IDENT => Name.Other
+        {{ JS_IDENT }} => Name.Other
         "(\\\\|\\"|[^"])*" => String.Double
         '(\\\\|\\'|[^'])*' => String.Single
         ` => String.Backtick >interp
 states
     slashstartsregex:
         include commentsandwhitespace
-        /(\\.|[^[/\\\n]|\[(\\.|[^\]\\\n])*])+/([gimuy]+\b|\B)c=> String.Regex ^
+        /(\\.|[^[/\\\n]|\[(\\.|[^\]\\\n])*])+/([gimuy]+\b|\B) => String.Regex ^
         (?=/) => Text ^>badregex
         => ^
     badregex:
