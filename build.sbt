@@ -58,7 +58,7 @@ libraryDependencies ++= {
 //}
 
 libraryDependencies ++= Seq(
-  "xyz.hyperreal" %% "backslash" % "0.4.20"
+  "xyz.hyperreal" %% "backslash" % "0.4.21"
 )
 
 coverageExcludedPackages := ".*Main"

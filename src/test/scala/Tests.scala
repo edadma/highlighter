@@ -114,13 +114,13 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
       |<span class="punct">&lt;</span><span class="tag">html</span><span class="punct">&gt;</span>
       |  <span class="punct">&lt;</span><span class="tag">head</span><span class="punct">&gt;</span>
       |    <span class="punct">&lt;</span><span class="tag">style</span><span class="punct">&gt;</span><span class="using-css">
-      |      body {background-color: powderblue;}
-      |      p    {color: red;}
+      |      body &lcub;background-color: powderblue;&rcub;
+      |      p    &lcub;color: red;&rcub;
       |    </span><span class="punct">&lt;/</span><span class="tag">style</span><span class="punct">&gt;</span>
       |  <span class="punct">&lt;/</span><span class="tag">head</span><span class="punct">&gt;</span>
       |  <span class="punct">&lt;</span><span class="tag">body</span><span class="punct">&gt;</span>
       |    <span class="comment">&lt;!-- comment --&gt;</span>
-      |    <span class="punct">&lt;</span><span class="tag">p</span> <span class="attr">align</span><span class="oper">=</span><span class="string">"right"</span><span class="punct">&gt;</span>paragraph<span class="punct">&lt;/</span><span class="tag">p</span><span class="punct">&gt;</span>
+      |    <span class="punct">&lt;</span><span class="tag">p</span> <span class="attr">align</span><span class="oper">=</span><span class="string">&quot;right&quot;</span><span class="punct">&gt;</span>paragraph<span class="punct">&lt;/</span><span class="tag">p</span><span class="punct">&gt;</span>
       |  <span class="punct">&lt;/</span><span class="tag">body</span><span class="punct">&gt;</span>
       |<span class="punct">&lt;/</span><span class="tag">html</span><span class="punct">&gt;</span>
     """.stripMargin.trim
@@ -159,16 +159,16 @@ class Tests extends FreeSpec with PropertyChecks with Matchers {
       """.trim.stripMargin
     ).trim shouldBe
       """
-        |<span class="keyword">function</span><span class="name">asdf</span><span class="keyword">{</span>
+        |<span class="keyword">function</span><span class="name">asdf</span><span class="keyword">&lcub;</span>
         |  <span class="comment">// doesn't do anything;</span>
-        |<span class="keyword">}</span>
+        |<span class="keyword">&rcub;</span>
         |
         |<span class="comment">// comment</span>
         |
-        |<span class="keyword">function</span><span class="name">zxcv</span><span class="keyword">{</span>
+        |<span class="keyword">function</span><span class="name">zxcv</span><span class="keyword">&lcub;</span>
         |  <span class="comment">/* useless aswell; */</span>
         |  something stupid;
-        |<span class="keyword">}</span>
+        |<span class="keyword">&rcub;</span>
       """.stripMargin.trim
 
   }
