@@ -6,7 +6,7 @@ object Main extends App {
 //  val input = io.Source.fromFile( "test.html" ) mkString
   val input =
     """
-      |length / 2
+      |// asdf
     """.stripMargin
   val highlighter =
     new Highlighter {

@@ -160,7 +160,7 @@ object JavascriptHighlighter extends Highlighter {
           ), 
           MatchRule(
             name = None,
-            regex = StaticRAST("#.*?\\n"),
+            regex = StaticRAST("//.*?\\n"),
             actions = List(
               Match(Token(
                 clas = "Comment.Single",

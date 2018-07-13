@@ -28,7 +28,7 @@ includes
         \s+ => Text
         <!-- => Comment
         /\*.*?\*/ => Comment.Multiline
-        #.*?\n => Comment.Single
+        //.*?\n => Comment.Single
     root:
         \A#! ?/.*?\n => Comment.Hashbang  ## recognized by node.js
 ##        ^(?=\s|/|<!--) => Text >slashstartsregex
