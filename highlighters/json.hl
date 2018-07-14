@@ -10,7 +10,7 @@ equates
     exp_part   = '[eE][+-]?\d+'
 includes
     simplevalue:
-        true|false|null)\b                                                         => Keyword.Constant
+        (true|false|null)\b                                                        => Keyword.Constant
         {{ int_part }}({{ frac_part + exp_part }}|{{ exp_part }}|{{ frac_part }})  => Number.Float
         {{ int_part }}                                                             => Number.Integer
         "(\\\\|\\"|[^"])*"                                                         => String.Double

@@ -38,7 +38,7 @@ object JSONHighlighter extends Highlighter {
         "simplevalue" -> List(
           MatchRule(
             name = None,
-            regex = StaticRAST("true|false|null)\\b"),
+            regex = StaticRAST("(true|false|null)\\b"),
             actions = List(
               Match(Token(
                 clas = "Keyword.Constant",
