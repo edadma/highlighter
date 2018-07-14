@@ -52,8 +52,8 @@ states
     include backslash
     \{  => Keyword.Reserved ^
   pipe:
-    (\\)({{commands2}})  => (Keyword.Reserved Name.Builtin) >command
-    (\\)({{commands3}})  => (Keyword.Reserved Name.Builtin) >command >command
+    (\\)({{words(commands2)}}\b)  => (Keyword.Reserved Name.Builtin) >command
+    (\\)({{words(commands3)}}\b)  => (Keyword.Reserved Name.Builtin) >command >command
     {{command}}          => (Keyword.Reserved Name.Builtin) ^
   comment:
     [^-]+  => Comment

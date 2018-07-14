@@ -502,8 +502,13 @@ object BackslashHighlighter extends Highlighter {
               name = None,
               regex = SeqRAST(List(
                 StaticRAST("(\\\\)("), 
-                VariableRAST("commands2"), 
-                StaticRAST(")")
+                FunctionRAST(
+                  f = "words",
+                  args = List(
+                    VariableRAST("commands2")
+                  )
+                ), 
+                StaticRAST("\\b)")
               )),
               actions = List(
                 Groups(List(
@@ -523,8 +528,13 @@ object BackslashHighlighter extends Highlighter {
               name = None,
               regex = SeqRAST(List(
                 StaticRAST("(\\\\)("), 
-                VariableRAST("commands3"), 
-                StaticRAST(")")
+                FunctionRAST(
+                  f = "words",
+                  args = List(
+                    VariableRAST("commands3")
+                  )
+                ), 
+                StaticRAST("\\b)")
               )),
               actions = List(
                 Groups(List(
