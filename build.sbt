@@ -1,6 +1,6 @@
 name := "highlighter"
 
-version := "0.1.6"
+version := "0.1.7"
 
 scalaVersion := "2.12.6"
 
@@ -58,7 +58,7 @@ libraryDependencies ++= {
 //}
 
 libraryDependencies ++= Seq(
-  "xyz.hyperreal" %% "backslash" % "0.4.21"
+  "xyz.hyperreal" %% "backslash" % "0.4.22"
 )
 
 coverageExcludedPackages := ".*Main"
