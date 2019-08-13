@@ -39,7 +39,7 @@ package object highlighter {
     if (pos eq null)
       sys.error( error )
     else
-      sys.error( pos.line + ": " + error + "\n" + pos.longString )
+      sys.error( s"${pos.line}: $error\n${pos.longString}" )
 
   implicit def symbol2token( clas: Symbol ) = Token( clas.name )
 

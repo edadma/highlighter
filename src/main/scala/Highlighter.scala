@@ -4,7 +4,6 @@ package xyz.hyperreal.highlighter
 import java.util.regex.{MatchResult, Pattern}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayStack
 import xyz.hyperreal.backslash.{AST, Command, Parser, Renderer}
 
 
@@ -111,7 +110,7 @@ abstract class Highlighter {
   def highlight( code: String, send: (String, Chars) => Unit = null ): String = {
 
     val stack =
-      new ArrayStack[State] {
+      new mutable.Stack[State] {
         push( states("root") )
       }
     val result = new StringBuilder
@@ -128,7 +127,7 @@ abstract class Highlighter {
         } else if (tracelimit > 0 && tracecount == tracelimit)
           sys.exit
 
-    def output( s: String, clas: Chars ) {
+    def output( s: String, clas: Chars ): Unit = {
       def out( cls: String, tmp: String ): Unit = {
         templates get tmp match {
           case None =>
