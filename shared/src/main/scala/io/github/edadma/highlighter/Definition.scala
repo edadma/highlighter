@@ -1,8 +1,8 @@
-package xyz.hyperreal.highlighter
+package io.github.edadma.highlighter
 
 import java.util.regex.Pattern
 
-import xyz.hyperreal.backslash.AST
+import io.github.edadma.backslash.AST
 
 
 case class Definition( sections: Seq[Section] )

@@ -1,14 +1,13 @@
 //@
-package xyz.hyperreal.highlighter
+package io.github.edadma.highlighter
 
 import scala.collection.mutable
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.{PagedSeq, PagedSeqReader}
 
-
 object HighlighterParser extends RegexParsers {
 
-  override val whiteSpace = """(?:[ \t]|##.*)+"""r
+  override val whiteSpace = """(?:[ \t]|##.*)+""" r
 
   val equates = new mutable.HashMap[String, RAST]
 
@@ -23,16 +22,16 @@ object HighlighterParser extends RegexParsers {
     optionSection | infoSection | templateSection | includeSection | stateSection | classesSection | equatesSection
 
   def optionSection =
-    "options" ~> nl ~> rep1(options) ^^ (o => Options( o.flatten ))
+    "options" ~> nl ~> rep1(options) ^^ (o => Options(o.flatten))
 
   def options =
     "regex" ~> ":" ~> rep1(regexFlags) <~ onl
 
   def regexFlags =
     "ignorecase" ^^^ Ignorecase |
-    "dotall" ^^^ Dotall |
-    "multiline" ^^^ Multiline |
-    "unicode" ^^^ Unicode
+      "dotall" ^^^ Dotall |
+      "multiline" ^^^ Multiline |
+      "unicode" ^^^ Unicode
 
   def infoSection =
     "highlighter" ~> nl ~> rep1(infoItems) ^^ InfoItems
@@ -40,14 +39,14 @@ object HighlighterParser extends RegexParsers {
   def infoItems =
     "name" ~> ":" ~> ident <~ onl ^^ Name
 
-  def ident: Parser[String] = """[a-zA-Z_][\w._-]*"""r
+  def ident: Parser[String] = """[a-zA-Z_][\w._-]*""" r
 
   def number: Parser[Int] = """\d+""".r ^^ (_.toInt)
 
   def integer = """\d+""".r ^^ (_.toInt)
 
   def templateSection =
-    "templates" ~> nl ~> rep1(template) ^^ (ts => Templates( ts toMap ))
+    "templates" ~> nl ~> rep1(template) ^^ (ts => Templates(ts.toMap))
 
   def template =
     ident ~ ":" ~ "{{" ~ rep(guard(not("}}")) ~> elem("", ch => true)) ~ "}}" <~ onl ^^ {
@@ -55,7 +54,7 @@ object HighlighterParser extends RegexParsers {
     }
 
   def includeSection =
-    "includes" ~> nl ~> rep1(include) ^^ (includes => Includes( includes toMap ))
+    "includes" ~> nl ~> rep1(include) ^^ (includes => Includes(includes.toMap))
 
   def include =
     ident ~ ":" ~ onl ~ rep1(rules <~ onl) ^^ {
@@ -67,7 +66,7 @@ object HighlighterParser extends RegexParsers {
 
   def state =
     ident ~ ":" ~ onl ~ rep1(rules <~ onl) ^^ {
-      case name ~ _ ~ _ ~ rules => State( name, rules )
+      case name ~ _ ~ _ ~ rules => State(name, rules)
     }
 
   def rules =
@@ -75,61 +74,63 @@ object HighlighterParser extends RegexParsers {
 
   def matchRule =
     opt("`" ~> ident <~ "`") ~ pattern ~ "=>" ~ rep1(action) ^^ {
-      case n ~ r ~ _ ~ a => MatchRule( n, r, a )
+      case n ~ r ~ _ ~ a => MatchRule(n, r, a)
     }
 
   def pattern =
     rep1(guard(not("=>")) ~> segment) ^^ {
-      case List( p ) => p
-      case s => SeqRAST( s )
+      case List(p) => p
+      case s       => SeqRAST(s)
     }
 
   def segment =
     guard(not("{{")) ~> """.+?(?=\s*(?:=>|\{\{))""".r ^^ StaticRAST |
-    "{{" ~> code <~ "}}"
+      "{{" ~> code <~ "}}"
 
   def code: Parser[RAST] =
     additive
 
   def additive =
     function ~ rep(("+" <~ onl) ~ function) ^^ {
-      case a ~ l => (l foldLeft a) {
-        case (l, op ~ r) => BinaryRAST( l, op, r )
-      }
+      case a ~ l =>
+        (l foldLeft a) {
+          case (l, op ~ r) => BinaryRAST(l, op, r)
+        }
     }
 
   def function =
     ident ~ "(" ~ repsep(code, "," ~ onl) ~ ")" ^^ {
-      case name ~ _ ~ args ~ _ => FunctionRAST( name, args ) } |
-    value
+      case name ~ _ ~ args ~ _ => FunctionRAST(name, args)
+    } |
+      value
 
-  def escapes( s: String ) =
-    s.replace( """\"""", "\"" ).
-      replace( """\n""", "\n" ).
-      replace( """\t""", "\t" ).
-      replace( """\r""", "\r" ).
-      replace( """\\""", "\\" )
+  def escapes(s: String) =
+    s.replace("""\"""", "\"")
+      .replace("""\n""", "\n")
+      .replace("""\t""", "\t")
+      .replace("""\r""", "\r")
+      .replace("""\\""", "\\")
 
   def value =
-    "\"" ~> """(\\\\|\\"|[^"])*""".r <~ "\"" ^^ (s => LiteralRAST( escapes(s) )) |
-    "'" ~> "(''|[^'])*".r <~ "'" ^^ (s => LiteralRAST( s.replace("''", "'") )) |
-    "[" ~> onl ~> repsep(code, "," ~ onl) <~ onl <~ "]" ^^ ListRAST |
-    ident ^^ VariableRAST
+    "\"" ~> """(\\\\|\\"|[^"])*""".r <~ "\"" ^^ (s => LiteralRAST(escapes(s))) |
+      "'" ~> "(''|[^'])*".r <~ "'" ^^ (s => LiteralRAST(s.replace("''", "'"))) |
+      "[" ~> onl ~> repsep(code, "," ~ onl) <~ onl <~ "]" ^^ ListRAST |
+      ident ^^ VariableRAST
 
   def action =
     chars ^^ Match |
-    "(" ~> rep1(chars) <~ ")" ^^ Groups |
-    ">" ~> ident ^^ Push |
-    "^" ~> integer ^^ Popn |
-    "^" ^^^ Pop |
-    "<" ~> ident ~ number <~ ">" ^^ {
-      case v ~ g => Assign( v, g )
-    }
+      "(" ~> rep1(chars) <~ ")" ^^ Groups |
+      ">" ~> ident ^^ Push |
+      "^" ~> integer ^^ Popn |
+      "^" ^^^ Pop |
+      "<" ~> ident ~ number <~ ">" ^^ {
+        case v ~ g => Assign(v, g)
+      }
 
   def chars =
     "[" ~> ident <~ "]" ^^ Using |
-    ident ~ "/" ~ ident ^^ { case c ~ _ ~ t => Token( c, t ) } |
-    ident ^^ (c => Token( c, "default" ))
+      ident ~ "/" ~ ident ^^ { case c ~ _ ~ t => Token(c, t) } |
+      ident ^^ (c => Token(c, "default"))
 
   def includeRule =
     "include" ~> ident ^^ IncludeRule
@@ -138,7 +139,7 @@ object HighlighterParser extends RegexParsers {
     "=>" ~> rep1(action) ^^ DefaultRule
 
   def classesSection =
-    "classes" ~> nl ~> rep1(mapping <~ onl) ^^ (ms => Classes( ms toMap ))
+    "classes" ~> nl ~> rep1(mapping <~ onl) ^^ (ms => Classes(ms toMap))
 
   def mapping =
     ident ~ ":" ~ ident ^^ {
@@ -146,20 +147,20 @@ object HighlighterParser extends RegexParsers {
     }
 
   def equatesSection =
-    "equates" ~> nl ~> rep1(equate <~ onl) ^^ (ms => Equates( ms toMap ))
+    "equates" ~> nl ~> rep1(equate <~ onl) ^^ (ms => Equates(ms toMap))
 
   def equate =
     opt("var") ~ ident ~ "=" ~ code ^^ {
-      case None ~ e ~ _ ~ c => (e, c)
-      case Some( _ ) ~ e ~ _ ~ c => (e, MutableRAST( c ))
+      case None ~ e ~ _ ~ c    => (e, c)
+      case Some(_) ~ e ~ _ ~ c => (e, MutableRAST(c))
     }
 
-  def apply( input: io.Source ): Definition =
-    parseAll( definition, new PagedSeqReader(PagedSeq.fromSource(input)) ) match {
-      case Success( result, _ ) => result
-      case Error( msg, next ) => sys.error( next.pos.longString )
+  def apply(input: scala.io.Source): Definition =
+    parseAll(definition, new PagedSeqReader(PagedSeq.fromSource(input))) match {
+      case Success(result, _) => result
+      case Error(msg, next)   => sys.error(next.pos.longString)
     }
 
-  def apply( input: String ): Definition = apply( io.Source.fromString(input) )
+  def apply(input: String): Definition = apply(scala.io.Source.fromString(input))
 
 }

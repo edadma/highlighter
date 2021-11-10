@@ -1,4 +1,4 @@
-package xyz.hyperreal.highlighter
+package io.github.edadma.highlighter
 
 
 trait RAST

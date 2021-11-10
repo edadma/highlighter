@@ -1,9 +1,9 @@
 //@
-package xyz.hyperreal.highlighter
+package io.github.edadma.highlighter
+
+import io.github.edadma.highlighter.highlighters.{BackslashHighlighter, CSSHighlighter, HTMLHighlighter, JSONHighlighter, JavascriptHighlighter}
 
 import collection.mutable
-
-import xyz.hyperreal.highlighter.highlighters._
 
 
 object Highlighters {

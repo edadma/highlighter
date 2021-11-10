@@ -1,16 +1,15 @@
 //@
-package xyz.hyperreal.highlighter
+package io.github.edadma.highlighter
 
-import org.scalatest._
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
+class Tests extends AnyFreeSpec with Matchers {
 
-class Tests extends FreeSpec with ScalaCheckPropertyChecks with Matchers {
-
-  def highlight( defn: String, input: String ) = {
+  def highlight( defn: String, input: String ): String = {
     val highlighter =
       new Highlighter {
-        def define = HighlighterParser( defn )
+        def define: Definition = HighlighterParser( defn )
       }
 
     highlighter.highlight( input )

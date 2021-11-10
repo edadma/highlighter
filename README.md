@@ -95,7 +95,7 @@ Use the following definition to use Highlighter in your Maven project:
 </repository>
 
 <dependency>
-  <groupId>xyz.hyperreal</groupId>
+  <groupId>io.github.edadma</groupId>
   <artifactId>highlighter</artifactId>
   <version>0.1.7</version>
 </dependency>
@@ -106,7 +106,7 @@ Add the following to your `build.sbt` file to use Highlighter in your SBT projec
 ```sbt
 resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
 
-libraryDependencies += "xyz.hyperreal" %% "highlighter" % "0.1.7"
+libraryDependencies += "io.github.edadma" %% "highlighter" % "0.1.0"
 ```
 
 ### Executable
