@@ -5,6 +5,7 @@ import java.util.regex.{MatchResult, Pattern}
 import scala.collection.mutable
 import io.github.edadma.backslash.{AST, Command, Parser, Renderer}
 
+import scala.annotation.tailrec
 import scala.language.postfixOps
 
 abstract class Highlighter {
@@ -30,7 +31,7 @@ abstract class Highlighter {
     var _equates: Map[String, RAST] = Map()
     var _named: Map[String, MatchRule] = Map()
 
-    def addRules(rules: Seq[Rule]) =
+    def addRules(rules: Seq[Rule]): Unit =
       rules foreach {
         case rule @ MatchRule(Some(name), _, _) =>
           if (_named contains name)
@@ -110,7 +111,6 @@ abstract class Highlighter {
   def highlight(code: scala.io.Source): String = highlight(code mkString)
 
   def highlight(code: String, send: (String, Chars) => Unit = null): String = {
-
     val stack =
       new mutable.Stack[State] {
         push(states("root"))
@@ -121,7 +121,7 @@ abstract class Highlighter {
     var prevast: AST = null
     var tracecount = 0
 
-    def tracing(s: Any) =
+    def tracing(s: Any): Unit =
       if (trace)
         if (tracelimit == 0 || tracelimit > 0 && tracecount < tracelimit) {
           println(s)
@@ -134,7 +134,7 @@ abstract class Highlighter {
         templates get tmp match {
           case None =>
             if (tmp == "text") {
-              flush
+              flush()
               result ++= s
             } else
               sys.error(s"unrecognized template: $tmp")
@@ -142,7 +142,7 @@ abstract class Highlighter {
             if (cls == prevclass)
               chunk ++= s
             else {
-              flush
+              flush()
               prevast = ast
               prevclass = cls
               chunk ++= s
@@ -168,7 +168,7 @@ abstract class Highlighter {
       }
     }
 
-    def flush: Unit =
+    def flush(): Unit =
       if (prevclass ne null) {
         result ++=
           renderer.capture(prevast, Map("class" -> classes.getOrElse(prevclass, prevclass), "text" -> chunk.toString))
@@ -178,6 +178,7 @@ abstract class Highlighter {
 
     def text(s: String): Unit = output(s, "text/text")
 
+    @tailrec
     def highlight(pos: Int): Unit = {
       def prefix(regex: Pattern) = {
         val m = regex matcher code
@@ -267,7 +268,7 @@ abstract class Highlighter {
     }
 
     highlight(0)
-    flush
+    flush()
 
     if (trace)
       ""
