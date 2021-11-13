@@ -7,8 +7,13 @@ templates
 equates
     IDENT = '[\p{Alpha}$_][\p{Alpha}$_0-9]*'
     keywords = [
-        'for', 'with', 'match', 'case', 'default', 'if', 'else',
-        'then'
+        'for', 'with', 'match', 'case', 'if', 'else', 'elif', 'then', 'end', 'define', 'block', 'with', 'return'
+        ]
+    builtin = [
+        'abs', 'absURL', 'append', 'capitalize', 'ceil', 'compact', 'complement', 'contains', 'default', 'distinct',
+        'drop', 'dropRight', 'emojify', 'fileExists', 'filter', 'filterNot', 'findRE', 'floor', 'format', 'head',
+        'htmlEscape', 'intersect', 'join', 'last', 'length', 'lower', 'map', 'markdownify', 'max', 'min', 'now',
+        'newline_to_br', 'number', 'partial', 'prepend', 'print', 'println', 'querify', 'random', 'relURL', 'reverse'
         ]
 states
   root:
@@ -21,12 +26,15 @@ states
     (<)\s*(style)\s*              => (Punctuation Name.Tag) >style-content >tag
     (<)\s*([\w:.-]+)              => (Punctuation Name.Tag) >tag
     (<)\s*(/)\s*([\w:.-]+)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation)
-    \{\{                          => Comment.Preproc >stag
+    \{\{                          => Punctuation.Template >stag
   stag:
-    \}\}                => Comment.Preproc ^
-    {{ IDENT }}      => Name.Other
-    "(\\\\|\\"|[^"])*"  => String.Double
-    '(\\\\|\\'|[^'])*'  => String.Single
+    \}\}                                        => Punctuation.Template ^
+    ({{ words( keywords ) }})\b                 => Keyword
+    (true|false|null)\b                         => Keyword.Constant
+    ({{ words( builtin ) }})\b                  => Name.Builtin
+    {{ IDENT }}                                 => Name.Variable
+    "(\\\\|\\"|[^"])*"                          => String.Double
+    '(\\\\|\\'|[^'])*'                          => String.Single
   comment:
     [^-]+  => Comment
     -->    => Comment ^

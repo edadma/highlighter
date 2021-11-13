@@ -5,7 +5,8 @@ import io.github.edadma.highlighter.highlighters.{
   CSSHighlighter,
   HTMLHighlighter,
   JSONHighlighter,
-  JavascriptHighlighter
+  JavascriptHighlighter,
+  SquigglyHighlighter
 }
 
 import collection.mutable
@@ -19,7 +20,8 @@ object Highlighters {
         CSSHighlighter,
         HTMLHighlighter,
         JavascriptHighlighter,
-        JSONHighlighter
+        JSONHighlighter,
+        SquigglyHighlighter
       ) map (h => h.highlighterName.toLowerCase -> h): _*)
 
   def registered(h: String): Option[Highlighter] = map get h.toLowerCase
