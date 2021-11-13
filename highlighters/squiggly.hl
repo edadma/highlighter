@@ -1,0 +1,47 @@
+highlighter
+  name: Squiggly
+options
+  regex: dotall ignorecase
+templates
+  default: {{ <span class="\class">\escape\text</span> }}
+equates
+    IDENT = '[\p{Alpha}$_][\p{Alpha}$_0-9]*'
+    keywords = [
+        'for', 'with', 'match', 'case', 'default', 'if', 'else',
+        'then'
+        ]
+states
+  root:
+    &\S*?;                        => Name.Entity
+    \<\!\[CDATA\[.*?\]\]\>        => Comment.Preproc
+    <!--                          => Comment >comment
+    <\?.*?\?>                     => Comment.Preproc
+    <![^>]*>                      => Comment.Preproc
+    (<)\s*(script)\s*             => (Punctuation Name.Tag) >script-content >tag
+    (<)\s*(style)\s*              => (Punctuation Name.Tag) >style-content >tag
+    (<)\s*([\w:.-]+)              => (Punctuation Name.Tag) >tag
+    (<)\s*(/)\s*([\w:.-]+)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation)
+    \{\{                          => Comment.Preproc >stag
+  stag:
+    \}\}                => Comment.Preproc ^
+    {{ IDENT }}      => Name.Other
+    "(\\\\|\\"|[^"])*"  => String.Double
+    '(\\\\|\\'|[^'])*'  => String.Single
+  comment:
+    [^-]+  => Comment
+    -->    => Comment ^
+    -      => Comment
+  tag:
+    ([\w:-]+)\s*(=)\s*  => (Name.Attribute Operator) >attr
+    [\w:-]+             => Name.Attribute
+    (/?)\s*(>)          => (Punctuation Punctuation) ^
+  script-content:
+    (<)\s*(/)\s*(script)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
+    .+?(?=<\s*/\s*script\s*>)   => [Javascript]
+  style-content:
+    (<)\s*(/)\s*(style)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation) ^
+    .+?(?=<\s*/\s*style\s*>)   => [CSS]
+  attr:
+    ".*?"    => String ^
+    '.*?'    => String ^
+    [^\s>]+  => String ^

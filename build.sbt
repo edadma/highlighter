@@ -34,7 +34,8 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .jvmSettings(
     libraryDependencies += "org.scala-js" %% "scalajs-stubs" % "1.0.0" % "provided",
-    libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "3.0.0" % "test"
+    libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "3.0.0" % "test",
+    libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.13.6"
   )
   .
   //  nativeSettings(
