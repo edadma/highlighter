@@ -92,7 +92,33 @@ object SquigglyHighlighter extends Highlighter {
                 LiteralRAST(v = "querify"),
                 LiteralRAST(v = "random"),
                 LiteralRAST(v = "relURL"),
-                LiteralRAST(v = "reverse")
+                LiteralRAST(v = "reverse"),
+                LiteralRAST(v = "remove"),
+                LiteralRAST(v = "removeFirst"),
+                LiteralRAST(v = "round"),
+                LiteralRAST(v = "shuffle"),
+                LiteralRAST(v = "slice"),
+                LiteralRAST(v = "split"),
+                LiteralRAST(v = "startsWith"),
+                LiteralRAST(v = "substring"),
+                LiteralRAST(v = "sum"),
+                LiteralRAST(v = "tail"),
+                LiteralRAST(v = "take"),
+                LiteralRAST(v = "symdiff"),
+                LiteralRAST(v = "takeRight"),
+                LiteralRAST(v = "time"),
+                LiteralRAST(v = "toSeq"),
+                LiteralRAST(v = "toString"),
+                LiteralRAST(v = "trim"),
+                LiteralRAST(v = "truncate"),
+                LiteralRAST(v = "ltrim"),
+                LiteralRAST(v = "rtrim"),
+                LiteralRAST(v = "urlDecode"),
+                LiteralRAST(v = "urlEncode"),
+                LiteralRAST(v = "union"),
+                LiteralRAST(v = "unix"),
+                LiteralRAST(v = "upper"),
+                LiteralRAST(v = "urlize")
               )
             )
           )
@@ -187,9 +213,14 @@ object SquigglyHighlighter extends Highlighter {
                 ),
                 MatchRule(
                   name = None,
+                  regex = StaticRAST(s = "\\{\\{\\s*//.*?}}"),
+                  actions = List(Match(tok = Token(clas = "Comment", template = "default")))
+                ),
+                MatchRule(
+                  name = None,
                   regex = StaticRAST(s = "\\{\\{"),
                   actions = List(
-                    Match(tok = Token(clas = "Punctuation.Template", template = "default")),
+                    Match(tok = Token(clas = "Comment.Preproc", template = "default")),
                     Push(name = "stag")
                   )
                 )

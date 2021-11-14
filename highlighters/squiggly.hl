@@ -7,13 +7,16 @@ templates
 equates
     IDENT = '[\p{Alpha}$_][\p{Alpha}$_0-9]*'
     keywords = [
-        'for', 'with', 'match', 'case', 'if', 'else', 'elif', 'then', 'end', 'define', 'block', 'with', 'return'
+        'for', 'with', 'match', 'case', 'if', 'else', 'elsif', 'then', 'end', 'define', 'block', 'return', 'break', 'continue'
         ]
     builtin = [
         'abs', 'absURL', 'append', 'capitalize', 'ceil', 'compact', 'complement', 'contains', 'default', 'distinct',
         'drop', 'dropRight', 'emojify', 'fileExists', 'filter', 'filterNot', 'findRE', 'floor', 'format', 'head',
         'htmlEscape', 'intersect', 'join', 'last', 'length', 'lower', 'map', 'markdownify', 'max', 'min', 'now',
-        'newline_to_br', 'number', 'partial', 'prepend', 'print', 'println', 'querify', 'random', 'relURL', 'reverse'
+        'newline_to_br', 'number', 'partial', 'prepend', 'print', 'println', 'querify', 'random', 'relURL', 'reverse',
+        'remove', 'removeFirst', 'round', 'shuffle', 'slice', 'split', 'startsWith', 'substring', 'sum', 'tail', 'take',
+        'symdiff', 'takeRight', 'time', 'toSeq', 'toString', 'trim', 'truncate', 'ltrim', 'rtrim', 'urlDecode',
+        'urlEncode', 'union', 'unix', 'upper', 'urlize'
         ]
 states
   root:
@@ -26,15 +29,16 @@ states
     (<)\s*(style)\s*              => (Punctuation Name.Tag) >style-content >tag
     (<)\s*([\w:.-]+)              => (Punctuation Name.Tag) >tag
     (<)\s*(/)\s*([\w:.-]+)\s*(>)  => (Punctuation Punctuation Name.Tag Punctuation)
-    \{\{                          => Punctuation.Template >stag
+    \{\{\s*//.*?}}                => Comment
+    \{\{                          => Comment.Preproc >stag
   stag:
-    \}\}                                        => Punctuation.Template ^
-    ({{ words( keywords ) }})\b                 => Keyword
-    (true|false|null)\b                         => Keyword.Constant
-    ({{ words( builtin ) }})\b                  => Name.Builtin
-    {{ IDENT }}                                 => Name.Variable
-    "(\\\\|\\"|[^"])*"                          => String.Double
-    '(\\\\|\\'|[^'])*'                          => String.Single
+    \}\}                       => Punctuation.Template ^
+    ({{ words(keywords) }})\b  => Keyword
+    (true|false|null)\b        => Keyword.Constant
+    ({{ words(builtin) }})\b   => Name.Builtin
+    {{ IDENT }}                => Name.Variable
+    "(\\\\|\\"|[^"])*"         => String.Double
+    '(\\\\|\\'|[^'])*'         => String.Single
   comment:
     [^-]+  => Comment
     -->    => Comment ^

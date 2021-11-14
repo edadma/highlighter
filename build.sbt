@@ -5,7 +5,7 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("."))
   .settings(
     name := "highlighter",
-    version := "0.1.1-pre.6",
+    version := "0.1.1-pre.7",
     scalaVersion := "2.13.6",
     scalacOptions ++=
       Seq(
@@ -24,7 +24,10 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     mainClass := Some(s"${organization.value}.${name.value}.Main"),
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.10" % "test",
     libraryDependencies += "org.scala-lang.modules" %%% "scala-parser-combinators" % "2.0.0",
-    libraryDependencies += "com.lihaoyi" %%% "pprint" % "0.6.6",
+    libraryDependencies ++= Seq(
+      "com.github.scopt" %%% "scopt" % "4.0.1",
+      "com.lihaoyi" %%% "pprint" % "0.6.6",
+    ),
     libraryDependencies ++= Seq(
       "io.github.edadma" %%% "backslash" % "0.1.0"
     ),
