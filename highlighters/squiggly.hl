@@ -12,7 +12,7 @@ equates
     builtin = [
         'abs', 'absURL', 'append', 'capitalize', 'ceil', 'compact', 'complement', 'contains', 'default', 'distinct',
         'drop', 'dropRight', 'emojify', 'fileExists', 'filter', 'filterNot', 'findRE', 'floor', 'format', 'head',
-        'htmlEscape', 'intersect', 'join', 'last', 'length', 'lower', 'map', 'markdownify', 'max', 'min', 'now',
+        'htmlEscape', 'intersect', 'isEmpty', 'join', 'last', 'length', 'lower', 'map', 'markdownify', 'max', 'min', 'nonEmpty', 'now',
         'newline_to_br', 'number', 'partial', 'prepend', 'print', 'println', 'querify', 'random', 'relURL', 'reverse',
         'remove', 'removeFirst', 'round', 'shuffle', 'slice', 'split', 'startsWith', 'substring', 'sum', 'tail', 'take',
         'symdiff', 'takeRight', 'time', 'toSeq', 'toString', 'trim', 'truncate', 'ltrim', 'rtrim', 'urlDecode',
