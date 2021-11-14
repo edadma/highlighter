@@ -59,7 +59,6 @@ object Builtin {
       "Operator" -> "o",
       "Operator.Word" -> "ow",
       "Punctuation" -> "p",
-      "Punctuation.Template" -> "pt",
       "Comment" -> "c",
       "Comment.Hashbang" -> "ch",
       "Comment.Multiline" -> "cm",

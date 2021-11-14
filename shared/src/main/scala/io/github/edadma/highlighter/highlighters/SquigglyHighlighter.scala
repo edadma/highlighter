@@ -233,7 +233,7 @@ object SquigglyHighlighter extends Highlighter {
                   name = None,
                   regex = StaticRAST(s = "\\}\\}"),
                   actions = List(
-                    Match(tok = Token(clas = "Punctuation.Template", template = "default")),
+                    Match(tok = Token(clas = "Comment.Preproc", template = "default")),
                     Pop
                   )
                 ),

@@ -32,7 +32,7 @@ states
     \{\{\s*//.*?}}                => Comment
     \{\{                          => Comment.Preproc >stag
   stag:
-    \}\}                       => Punctuation.Template ^
+    \}\}                       => Comment.Preproc ^
     ({{ words(keywords) }})\b  => Keyword
     (true|false|null)\b        => Keyword.Constant
     ({{ words(builtin) }})\b   => Name.Builtin

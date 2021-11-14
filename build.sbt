@@ -5,7 +5,7 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("."))
   .settings(
     name := "highlighter",
-    version := "0.1.1-pre.7",
+    version := "0.1.1-pre.8",
     scalaVersion := "2.13.6",
     scalacOptions ++=
       Seq(
