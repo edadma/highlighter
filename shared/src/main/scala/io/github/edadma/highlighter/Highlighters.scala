@@ -22,13 +22,14 @@ object Highlighters {
         JavascriptHighlighter,
         JSONHighlighter,
         SquigglyHighlighter
-      ) map (h => h.highlighterName.toLowerCase -> h): _*)
+      ) flatMap (h => (h.highlighterName -> h) +: h.highlighterAliases.map(_ -> h)): _*)
 
-  def registered(h: String): Option[Highlighter] = map get h.toLowerCase
+  def registered(h: String): Option[Highlighter] = map get h
 
   def register(h: Highlighter): Unit = {
-    require(!(map contains h.highlighterName.toLowerCase))
-    map += (h.highlighterName.toLowerCase -> h)
+    require(!(map.keySet.map(_.toLowerCase) contains h.highlighterName.toLowerCase))
+    map += (h.highlighterName -> h)
+    map ++= h.highlighterAliases.map(_ -> h)
   }
 
 }

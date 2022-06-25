@@ -1,5 +1,6 @@
 highlighter
   name: HTML
+  alias: html
 options
   regex: dotall ignorecase
 templates

@@ -1,5 +1,6 @@
 highlighter
   name: CSS
+  alias: css
 templates
   default: {{ <span class="\class">\escape\text</span> }}
 equates

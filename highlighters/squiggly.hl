@@ -1,5 +1,6 @@
 highlighter
   name: Squiggly
+  alias: squiggly
 options
   regex: dotall ignorecase
 templates

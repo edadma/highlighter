@@ -7,6 +7,7 @@ import io.github.edadma.backslash.AST
 case class Definition(sections: Seq[Section])
 
 trait Section
+case class Extends(lexer: String) extends Section
 case class InfoItems(items: Seq[InfoItem]) extends Section
 case class Options(options: Seq[LexerOption]) extends Section
 case class Templates(templates: Map[String, AST]) extends Section
@@ -17,6 +18,7 @@ case class Equates(equates: Map[String, RAST]) extends Section
 
 trait InfoItem
 case class Name(s: String) extends InfoItem
+case class Alias(s: String) extends InfoItem
 
 case class State(name: String, rules: Seq[Rule])
 
@@ -33,6 +35,9 @@ case class MatchRule(name: Option[String], var regex: RAST, actions: Seq[Action]
 case class MismatchRule(regex: RAST, actions: Seq[Action]) extends Rule { val pattern = new Const[Pattern] }
 case class DefaultRule(actions: Seq[Action]) extends Rule
 case class IncludeRule(include: String) extends Rule {
+  val actions: Seq[Action] = Nil; val rules = new Const[Seq[Rule]]
+}
+case object InheritRule extends Rule {
   val actions: Seq[Action] = Nil; val rules = new Const[Seq[Rule]]
 }
 

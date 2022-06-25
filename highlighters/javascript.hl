@@ -1,5 +1,7 @@
 highlighter
-    name: Javascript
+    name: JavaScript
+    alias: js
+    alias: javascript
 options
     regex: dotall unicode multiline
 templates

@@ -19,7 +19,10 @@ object HighlighterParser extends RegexParsers {
     onl ~> rep1(section) ^^ Definition
 
   def section: Parser[Section] =
-    optionSection | infoSection | templateSection | includeSection | stateSection | classesSection | equatesSection
+    optionSection | infoSection | templateSection | includeSection | stateSection | classesSection | equatesSection | extendsSection
+
+  def extendsSection: Parser[Extends] =
+    "extends" ~> ident <~ nl ^^ Extends
 
   def optionSection: Parser[Options] =
     "options" ~> nl ~> rep1(options) ^^ (o => Options(o.flatten))
@@ -36,8 +39,9 @@ object HighlighterParser extends RegexParsers {
   def infoSection: Parser[InfoItems] =
     "highlighter" ~> nl ~> rep1(infoItems) ^^ InfoItems
 
-  def infoItems: Parser[Name] =
-    "name" ~> ":" ~> ident <~ onl ^^ Name
+  def infoItems: Parser[InfoItem] =
+    "name" ~> ":" ~> ident <~ onl ^^ Name |
+      "alias" ~> ":" ~> ident <~ onl ^^ Alias
 
   def ident: Parser[String] = """[a-zA-Z_][\w._-]*""".r
 
@@ -70,7 +74,7 @@ object HighlighterParser extends RegexParsers {
     }
 
   def rules: Parser[Rule] =
-    guard(not(ident ~ ":")) ~> (matchRule | includeRule | defaultRule)
+    guard(not(ident ~ ":")) ~> (matchRule | includeRule | inheritRule | defaultRule)
 
   def matchRule: Parser[MatchRule] =
     opt("`" ~> ident <~ "`") ~ pattern ~ "=>" ~ rep1(action) ^^ {
@@ -133,6 +137,7 @@ object HighlighterParser extends RegexParsers {
 
   def includeRule: Parser[IncludeRule] = "include" ~> ident ^^ IncludeRule
 
+  def inheritRule: Parser[IncludeRule] = "inherit" ^^^ Inhe
   def defaultRule: Parser[DefaultRule] = "=>" ~> rep1(action) ^^ DefaultRule
 
   def classesSection: Parser[Classes] =

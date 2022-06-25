@@ -11,7 +11,7 @@ import scala.language.postfixOps
 abstract class Highlighter {
 
   def define: Definition
-  def config =
+  def config: Map[String, String] =
     Map(
       "today" -> "MMMM d, y",
       "include" -> ".",
@@ -21,9 +21,20 @@ abstract class Highlighter {
   var trace = false
   var tracelimit = 50
   val parser = new Parser(Command.standard)
-  val (flags, highlighterName, templates, states, classes, includes, equates, named) = {
+  val (flags,
+       highlighterExtends,
+       highlighterName,
+       highlighterAliases,
+       templates,
+       states,
+       classes,
+       includes,
+       equates,
+       named) = {
     var _flags = 0
+    var _extends: Option[Highlighter] = None
     var _name: String = getClass.getName
+    var _aliases: Set[String] = Set.empty
     var _templates: Map[String, AST] = null
     var _states: Map[String, State] = null
     var _classes: Map[String, String] = null
@@ -35,7 +46,7 @@ abstract class Highlighter {
       rules foreach {
         case rule @ MatchRule(Some(name), _, _) =>
           if (_named contains name)
-            sys.error(s"duplicate rule name: $name")
+            sys.error(s"duplicate rule: $name")
 
           _named += (name -> rule)
         case _ =>
@@ -44,9 +55,15 @@ abstract class Highlighter {
     define match {
       case Definition(sections) =>
         sections foreach {
+          case Extends(lexer) =>
+            Highlighters.registered(lexer) match {
+              case Some(value) => _extends = Some(value)
+              case None        => sys.error(s"unknown lexer $lexer")
+            }
           case InfoItems(items) =>
             items foreach {
-              case Name(s) => _name = s
+              case Name(s)  => _name = s
+              case Alias(s) => _aliases += s
             }
           case Options(options) =>
             options foreach {
@@ -85,7 +102,16 @@ abstract class Highlighter {
     if (!_states.contains("root"))
       sys.error("missing root state")
 
-    (_flags, _name, _templates, _states, if (_classes eq null) Builtin.map else _classes, _includes, _equates, _named)
+    (_flags,
+     _extends,
+     _name,
+     _aliases.toList,
+     _templates,
+     _states,
+     if (_classes eq null) Builtin.map else _classes,
+     _includes,
+     _equates,
+     _named)
   }
   val renderer = new Renderer(parser, config)
 
@@ -115,8 +141,8 @@ abstract class Highlighter {
       new mutable.Stack[State] {
         push(states("root"))
       }
-    val result = new StringBuilder
-    val chunk = new StringBuilder
+    val result = new mutable.StringBuilder
+    val chunk = new mutable.StringBuilder
     var prevclass: String = null
     var prevast: AST = null
     var tracecount = 0

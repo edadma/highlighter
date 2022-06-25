@@ -1,5 +1,6 @@
 highlighter
   name: Backslash
+  alias: backslash
 options
   regex: dotall ignorecase
 templates
