@@ -8,12 +8,14 @@ templates
     default: {{ <span class="\class">\escape\text</span> }}
 equates
     JS_IDENT = '[\p{Alpha}$_][\p{Alpha}$_0-9]*'
-    keywords = [
+    operator = ['typeof', 'instanceof', 'in', 'void', 'delete', 'new']
+    keyword = [
         'for', 'in', 'while', 'do', 'break', 'return', 'continue', 'switch', 'case', 'default', 'if', 'else',
-        'throw', 'try', 'catch', 'finally', 'new', 'delete', 'typeof', 'instanceof', 'void', 'yield', 'this', 'of'
+        'throw', 'try', 'catch', 'finally', 'yield', 'await', 'async', 'this', 'of', 'static', 'export', 'import', 'debugger', 'extends', 'super'
         ]
+    declaration = ['var', 'let', 'const', 'with', 'function', 'class']
     reserved = [
-        'abstract', 'boolean', 'byte', 'char', 'class', 'const', 'debugger', 'double', 'enum', 'export',
+        'constructor', 'from', 'as', 'abstract', 'boolean', 'byte', 'char', 'class', 'const', 'debugger', 'double', 'enum', 'export',
         'extends', 'final', 'float', 'goto', 'implements', 'import', 'int', 'interface', 'long', 'native',
         'package', 'private', 'protected', 'public', 'short', 'static', 'super', 'synchronized', 'throws',
         'transient', 'volatile'
@@ -35,20 +37,26 @@ includes
         \A#! ?/.*?\n => Comment.Hashbang  ## recognized by node.js
 ##        ^(?=\s|/|<!--) => Text >slashstartsregex
         include commentsandwhitespace
-        (\.\d+|[0-9]+\.[0-9]*)([eE][-+]?[0-9]+)? => Number.Float
+
+        # Numeric literals
         0[bB][01]+ => Number.Bin
         0[oO][0-7]+ => Number.Oct
         0[xX][0-9a-fA-F]+ => Number.Hex
-        [0-9]+ => Number.Integer
+        [0-9]+n => Number.Integer
+        (\.[0-9]+|[0-9]+\.[0-9]*|[0-9]+)([eE][-+]?[0-9]+)? => Number.Float
+
         \.\.\.|=\> => Punctuation
-        \+\+|--|~|&&|\?|:|\|\||\\(?=\n)|(<<|>>>?|==?|!=?|[-<>+*%&|^/])=? => Operator >slashstartsregex
+        \+\+|--|~|\?\?=?|\?|:|\\(?=\n)|(<<|>>>?|==?|!=?|(?:\*\*|\|\||&&|[-<>+*%&|^/]))=? => Operator >slashstartsregex
         [{(\[;,] => Punctuation >slashstartsregex
         [})\].] => Punctuation
-        ({{ words( keywords ) }})\b => Keyword >slashstartsregex
+
+        ({{ words(operator) }})\b => Operator.Word >slashstartsregex
+        ({{ words(keyword) }})\b => Keyword >slashstartsregex
+        ({{ words(declaration) }})\b => Keyword.Declaration >slashstartsregex
         (var|let|with|function)\b => Keyword.Declaration >slashstartsregex
-        ({{ words( reserved ) }})\b => Keyword.Reserved
+        ({{ words(reserved) }})\b => Keyword.Reserved
         (true|false|null|NaN|Infinity|undefined)\b => Keyword.Constant
-        ({{ words( builtin ) }})\b => Name.Builtin
+        ({{ words(builtin) }})\b => Name.Builtin
         {{ JS_IDENT }} => Name.Other
         "(\\\\|\\"|[^"])*" => String.Double
         '(\\\\|\\'|[^'])*' => String.Single
