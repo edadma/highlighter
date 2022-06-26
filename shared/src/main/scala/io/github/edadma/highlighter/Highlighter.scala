@@ -137,6 +137,8 @@ abstract class Highlighter {
   def highlight(code: scala.io.Source): String = highlight(code mkString)
 
   def highlight(code: String, send: (String, Chars) => Unit = null): String = {
+    if (!states.contains("root")) sys.error(s"no 'root' state found in highlighter '$highlighterName'")
+
     val stack =
       new mutable.Stack[State] {
         push(states("root"))
@@ -178,7 +180,7 @@ abstract class Highlighter {
 
       if (send ne null)
         send(s, clas)
-      else if (s nonEmpty) {
+      else if (s.nonEmpty) {
         tracing("output", s""""$s", $clas""")
 
         clas match {
@@ -238,6 +240,7 @@ abstract class Highlighter {
               case None    => sys.error(s"unknown include: $include")
               case Some(r) => r
             }), apply)
+          case rule @ InheritRule() => sys.error("not supported yet")
         }
       }
 

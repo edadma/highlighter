@@ -37,7 +37,7 @@ case class DefaultRule(actions: Seq[Action]) extends Rule
 case class IncludeRule(include: String) extends Rule {
   val actions: Seq[Action] = Nil; val rules = new Const[Seq[Rule]]
 }
-case object InheritRule extends Rule {
+case class InheritRule() extends Rule {
   val actions: Seq[Action] = Nil; val rules = new Const[Seq[Rule]]
 }
 
