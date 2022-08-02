@@ -53,7 +53,7 @@ object HighlighterParser extends RegexParsers {
     "templates" ~> nl ~> rep1(template) ^^ (ts => Templates(ts.toMap))
 
   def template: Parser[(String, String)] =
-    ident ~ ":" ~ "{{" ~ rep(guard(not("}}")) ~> elem("", _ => true)) ~ "}}" <~ onl ^^ {
+    ident ~ ":" ~ "{{%" ~ rep(guard(not("%}}")) ~> elem("", _ => true)) ~ "%}}" <~ onl ^^ {
       case n ~ _ ~ _ ~ t ~ _ => (n, t.mkString.trim)
     }
 
