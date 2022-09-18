@@ -7,8 +7,8 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("."))
   .settings(
     name := "highlighter",
-    version := "0.1.1-pre.10",
-    scalaVersion := "3.1.3",
+    version := "0.1.1",
+    scalaVersion := "3.2.0",
     scalacOptions ++=
       Seq(
         "-deprecation",
@@ -23,14 +23,14 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     githubOwner := "edadma",
     githubRepository := name.value,
     mainClass := Some(s"${organization.value}.${name.value}.Main"),
-    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.12" % "test",
+    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.13" % "test",
     libraryDependencies += "org.scala-lang.modules" %%% "scala-parser-combinators" % "2.1.1",
     libraryDependencies ++= Seq(
       "com.github.scopt" %%% "scopt" % "4.1.0",
       "com.lihaoyi" %%% "pprint" % "0.7.3",
     ),
     libraryDependencies ++= Seq(
-      "io.github.edadma" %%% "mustache" % "0.1.13"
+      "io.github.edadma" %%% "mustache" % "0.1.14"
     ),
     publishMavenStyle := true,
     Test / publishArtifact := false,

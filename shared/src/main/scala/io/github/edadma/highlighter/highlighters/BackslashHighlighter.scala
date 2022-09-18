@@ -1,6 +1,5 @@
 package io.github.edadma.highlighter.highlighters
 
-import io.github.edadma.backslash._
 import io.github.edadma.highlighter._
 
 import scala.util.parsing.input.OffsetPosition
