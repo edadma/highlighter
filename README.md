@@ -4,6 +4,8 @@
 [![Last Commit](https://img.shields.io/github/last-commit/edadma/highlighter)](https://github.com/edadma/highlighter/commits)
 ![GitHub](https://img.shields.io/github/license/edadma/highlighter)
 ![Scala Version](https://img.shields.io/badge/Scala-3.8.2-blue.svg)
+![ScalaJS Version](https://img.shields.io/badge/Scala.js-1.20.2-blue.svg)
+![Scala Native Version](https://img.shields.io/badge/Scala_Native-0.5.10-blue.svg)
 
 A cross-platform Scala syntax highlighter that uses VS Code-compatible TextMate grammar JSON files to tokenize code and render highlighted HTML.
 
