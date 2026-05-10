@@ -47,6 +47,14 @@ class Tokenizer(grammar: Grammar):
     grammar.repository.getOrElse(Map.empty)
 
   private val resolvedCache = mutable.Map[String, List[ResolvedPattern]]()
+  // Snapshot of the prior pass's cache. Consulted ONLY when the current
+  // resolution detects a cycle (visited.contains(key)) — instead of
+  // returning Nil, we substitute whatever the previous pass managed to
+  // resolve for that key. Successive passes thus monotonically grow each
+  // cyclic key (a Nil from pass N becomes the partial-but-bigger result
+  // from pass N's main resolution in pass N+1's cycle return), and the
+  // cache reaches a fixed point in 2-3 passes on real grammars.
+  private var fallbackCache: Map[String, List[ResolvedPattern]] = Map.empty
 
   // Diagnostics: every regex that fails to compile during pattern resolution
   // gets recorded here so the surrounding `Highlighter` can expose it via
@@ -61,7 +69,24 @@ class Tokenizer(grammar: Grammar):
   // resolveAndCache MUST run after warningsBuf is initialized — Scala
   // initializes vals top-to-bottom, so this assignment lives below the
   // buffer declaration on purpose. Don't reorder.
-  private val topPatterns: List[ResolvedPattern] = resolveAndCache("$top", grammar.patterns)
+  //
+  // Fixed-point iteration: each pass treats the previous pass's cache
+  // as a fallback for cycle returns. Cyclic keys grow monotonically
+  // (a Nil cycle return becomes the prior pass's partial value, which
+  // is at least as large), so the iteration converges. Real grammars
+  // (JS/TS) stabilize in 2-3 passes; we cap at 8 as paranoia.
+  private val topPatterns: List[ResolvedPattern] =
+    var iters = 0
+    var done = false
+    while !done && iters < 8 do
+      iters += 1
+      val before = resolvedCache.toMap
+      fallbackCache = before
+      resolvedCache.clear()
+      resolveAndCache("$top", grammar.patterns, Set.empty)
+      done = resolvedCache.toMap == before
+    fallbackCache = Map.empty
+    resolvedCache("$top")
 
   /** Bridge from Oniguruma-flavoured TextMate regex to java.util.regex.
     * VS Code grammars are written for Oniguruma, which is more permissive
@@ -216,12 +241,18 @@ class Tokenizer(grammar: Grammar):
       warningsBuf += s"regex compile failed: $pat — ${e.getMessage}"
       None
 
-  private def resolveAndCache(key: String, patterns: List[Pattern]): List[ResolvedPattern] =
+  /** `visited` is the chain of keys currently being resolved; passing it
+    * through (rather than resetting to `Set(key)`) lets cycle detection
+    * extend across nested begin/end inner-pattern resolutions, so a deep
+    * chain that loops back to an outer key short-circuits to Nil instead
+    * of recursing forever. The key itself is added to visited inside the
+    * resolution call (via `resolveOne`'s `newVisited`), so nothing is
+    * lost. */
+  private def resolveAndCache(key: String, patterns: List[Pattern], visited: Set[String]): List[ResolvedPattern] =
     resolvedCache.get(key) match
       case Some(cached) => cached
       case None =>
-        resolvedCache(key) = Nil // sentinel to break cycles
-        val result = resolvePatterns(patterns, Set(key))
+        val result = resolvePatterns(patterns, visited + key)
         resolvedCache(key) = result
         result
 
@@ -236,20 +267,20 @@ class Tokenizer(grammar: Grammar):
 
       case Some(ref) if ref.startsWith("#") =>
         val key = ref.drop(1)
-        if visited.contains(key) then Nil
+        if visited.contains(key) then
+          // Cycle: substitute the previous pass's resolution if any. This
+          // is what makes fixed-point iteration converge — see
+          // `fallbackCache` for the rationale.
+          fallbackCache.getOrElse(key, Nil)
         else
           resolvedCache.get(key) match
             case Some(cached) => cached
             case None =>
               repository.get(key) match
                 case Some(entry) =>
-                  resolvedCache(key) = Nil // sentinel
                   val newVisited = visited + key
-                  val result = entry.patterns match
-                    case Some(ps) => resolvePatterns(ps, newVisited)
-                    case None =>
-                      val pat = RepositoryEntry.toPattern(entry)
-                      resolveOne(pat, newVisited)
+                  val pat = RepositoryEntry.toPattern(entry)
+                  val result = resolveOne(pat, newVisited)
                   resolvedCache(key) = result
                   result
                 case None => Nil
@@ -264,7 +295,7 @@ class Tokenizer(grammar: Grammar):
         else if p.begin.isDefined then
           compileRegex(p.begin.get).toList.map { r =>
             val innerKey = s"inner_${System.identityHashCode(p)}"
-            p.patterns.foreach(ps => resolveAndCache(innerKey, ps))
+            p.patterns.foreach(ps => resolveAndCache(innerKey, ps, visited))
             ResolvedPattern(
               p.name, r, isBegin = true, p.end, p.endCaptures,
               p.beginCaptures.orElse(p.captures), Some(innerKey), p.contentName,
