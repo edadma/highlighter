@@ -187,12 +187,12 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("bash").highlight("""x='hello'""").shouldHighlight("string")
     }
 
-    // TODO: bash grammar's #qstring-double inner patterns hang the
-    // engine on `echo "$HOME"` (>5min observed under both
-    // java.util.regex and oniguruma 0.0.1). The pattern set inside the
-    // double-quoted string body has whatever pathological structure
-    // makes both engines spin. Worth filing against oniguruma if
-    // upstream Onig handles it cleanly.
+    // Still hangs >25s under oniguruma 0.0.4 (post 6.D empty-body
+    // progress fix). Stage 6.D resolved the empty-body pathology
+    // class, so this is a different shape — the bash grammar's
+    // #qstring-double inner pattern set has whatever blow-up
+    // structure that 6.D doesn't catch. juicer's per-block 5s
+    // timeout still protects deployments.
     "variable expansion inside string" ignore {
       hl("bash").highlight("""echo "$HOME"""").shouldHighlight("variable")
     }
@@ -201,9 +201,9 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("bash").highlight("if true; then echo y; fi").shouldHighlight("keyword", "if")
     }
 
-    // TODO: bash grammar's for-loop pattern hangs the engine on
-    // `for i in 1 2 3; do echo $i; done` (>20s, killed). Same engine-
-    // perf issue as the variable-in-string case above.
+    // Same shape as 'variable expansion inside string' above — still
+    // hangs >20s under oniguruma 0.0.4 + Stage 6.D. The bash grammar's
+    // for-loop pattern has whatever blow-up structure 6.D doesn't catch.
     "for keyword" ignore {
       hl("bash").highlight("for i in 1 2 3; do echo $i; done").shouldHighlight("keyword", "for")
     }
