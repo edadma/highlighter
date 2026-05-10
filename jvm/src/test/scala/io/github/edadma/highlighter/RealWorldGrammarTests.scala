@@ -192,10 +192,12 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("bash").highlight("""x='hello'""").shouldHighlight("string")
     }
 
-    // TODO: $HOME inside double quotes lands in `string` only — variable
-    // sub-pattern inside #qstring-double isn't being descended. Real
-    // bug: nested patterns inside begin/end blocks aren't applied to
-    // the inner text.
+    // TODO: VS Code bash grammar's #qstring-double inner patterns trigger
+    // catastrophic backtracking under java.util.regex on `echo "$HOME"`
+    // — the nested variable-substitution pattern inside the string body
+    // takes >5 minutes and OOMs a 1GB heap. Will be fixed once the
+    // pure-Scala Oniguruma engine lands and we stop relying on
+    // java.util.regex's behavior on the same patterns.
     "variable expansion inside string" ignore {
       hl("bash").highlight("""echo "$HOME"""").shouldHighlight("variable")
     }
@@ -219,11 +221,7 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
 
   "python" - {
 
-    // TODO: python comment is being split — `# ` lands in `keyword`
-    // (the line-comment punctuation.definition.comment scope likely
-    // routes through `storage` or similar) and `hello` lands in
-    // `function`. Whole `# hello` should be one `comment` span.
-    "comment" ignore {
+    "comment" in {
       hl("python").highlight("# hello").shouldHighlight("comment")
     }
 
@@ -305,11 +303,11 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("yaml").highlight("key: value").shouldHighlight("punctuation")
     }
 
-    "string value" ignore {
+    "string value" in {
       hl("yaml").highlight("""key: "value"""").shouldHighlight("string")
     }
 
-    "list item" ignore {
+    "list item" in {
       hl("yaml").highlight("- item").shouldHighlight("punctuation")
     }
   }
@@ -519,14 +517,11 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       synth("""\b[_$[:alnum:]]+\b""").highlight("a_b").shouldHighlight("keyword", "a_b")
     }
 
-    "atomic group" ignore {
-      // TODO: java.util.regex doesn't accept (?>...) — VS Code's Oniguruma does.
-      // Highlighter swallows the compile error and silently drops the pattern.
+    "atomic group" in {
       synth("""(?>foo)""").highlight("foo").shouldHighlight("keyword", "foo")
     }
 
-    "possessive quantifier *+" ignore {
-      // TODO: same — java.util.regex spelled differently than Oniguruma here.
+    "possessive quantifier *+" in {
       synth("""f.*+""").highlight("foo").shouldHighlight("keyword", "foo")
     }
 

@@ -8,6 +8,11 @@ case class ResolvedPattern(
     regex: Regex,
     isBegin: Boolean,
     endPattern: Option[String],
+    // Pre-compiled end regex. Compiling at tokenize time on every state
+    // push allocated thousands of Regex objects per line on complex
+    // grammars (bash, JS) and OOMed long-running runs. Compiled once
+    // during pattern resolution and reused.
+    endRegex: Option[Regex],
     endCaptures: Option[Map[String, CaptureEntry]],
     captures: Option[Map[String, CaptureEntry]], // match captures or beginCaptures
     innerPatternKey: Option[String],
@@ -25,7 +30,7 @@ case class ResolvedPattern(
 // everywhere and is guaranteed to never match.
 private[highlighter] val SelfMarker = ResolvedPattern(
   name = None, regex = "\\b\\B".r, isBegin = false,
-  endPattern = None, endCaptures = None, captures = None,
+  endPattern = None, endRegex = None, endCaptures = None, captures = None,
   innerPatternKey = None, contentName = None, isSelfMarker = true,
 )
 
@@ -73,18 +78,27 @@ class Tokenizer(grammar: Grammar):
   // Fixed-point iteration: each pass treats the previous pass's cache
   // as a fallback for cycle returns. Cyclic keys grow monotonically
   // (a Nil cycle return becomes the prior pass's partial value, which
-  // is at least as large), so the iteration converges. Real grammars
-  // (JS/TS) stabilize in 2-3 passes; we cap at 8 as paranoia.
+  // is at least as large), so the iteration converges in 2-3 passes
+  // on real grammars. We compare entry COUNTS rather than contents
+  // because each pass freshly allocates Regex objects, and
+  // java.util.regex.Pattern.equals is reference-based — value-based
+  // comparison would always say "changed" and we'd run the cap forever.
+  // Cyclic-key sizes only ever grow, so size equality is a sound
+  // convergence test (total bytes can't grow without an entry growing).
   private val topPatterns: List[ResolvedPattern] =
+    def sizeMap: Map[String, Int] =
+      resolvedCache.map { case (k, v) => k -> v.length }.toMap
     var iters = 0
     var done = false
-    while !done && iters < 8 do
+    var beforeSizes: Map[String, Int] = Map.empty
+    while !done && iters < 6 do
       iters += 1
-      val before = resolvedCache.toMap
-      fallbackCache = before
+      fallbackCache = resolvedCache.toMap
       resolvedCache.clear()
       resolveAndCache("$top", grammar.patterns, Set.empty)
-      done = resolvedCache.toMap == before
+      val after = sizeMap
+      done = after == beforeSizes
+      beforeSizes = after
     fallbackCache = Map.empty
     resolvedCache("$top")
 
@@ -290,14 +304,19 @@ class Tokenizer(grammar: Grammar):
       case None =>
         if p.`match`.isDefined then
           compileRegex(p.`match`.get).toList.map { r =>
-            ResolvedPattern(p.name, r, isBegin = false, None, None, p.captures, None, None)
+            ResolvedPattern(p.name, r, isBegin = false, None, None, None, p.captures, None, None)
           }
         else if p.begin.isDefined then
           compileRegex(p.begin.get).toList.map { r =>
             val innerKey = s"inner_${System.identityHashCode(p)}"
             p.patterns.foreach(ps => resolveAndCache(innerKey, ps, visited))
+            // Pre-compile the end regex once. If end is missing or fails
+            // to compile, the state pushed will have no end and never
+            // pop on its own — same behaviour as before, just no per-
+            // token-position re-compilation.
+            val endRegex = p.end.flatMap(compileRegex)
             ResolvedPattern(
-              p.name, r, isBegin = true, p.end, p.endCaptures,
+              p.name, r, isBegin = true, p.end, endRegex, p.endCaptures,
               p.beginCaptures.orElse(p.captures), Some(innerKey), p.contentName,
             )
           }
@@ -447,7 +466,7 @@ class Tokenizer(grammar: Grammar):
             bestMatch.matched, bestMatch, pos, bestPat.captures,
             scopesFromStack(stateStack), bestPat.name, tokens,
           )
-          val endRegex = bestPat.endPattern.flatMap(compileRegex)
+          val endRegex = bestPat.endRegex
           val rawInner = bestPat.innerPatternKey
             .flatMap(resolvedCache.get)
             .getOrElse(Nil)
