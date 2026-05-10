@@ -15,9 +15,16 @@ case class ResolvedPattern(
     isSelfMarker: Boolean = false,
 )
 
-// Sentinel pattern for $self includes — resolved lazily at tokenization time
+// Sentinel pattern for $self includes — resolved lazily at tokenization
+// time. The `regex` field is filler: every consumer filters with
+// `isSelfMarker` first so the pattern is never matched against. The
+// previous filler `(?!)` (empty negative lookahead) is fine on JVM but
+// blows up on Scala Native's regex engine ("Unknown inline modifier") —
+// so we use `\b\B`, a self-contradictory pair (word-boundary AND
+// non-word-boundary at the same position) that compiles cleanly
+// everywhere and is guaranteed to never match.
 private[highlighter] val SelfMarker = ResolvedPattern(
-  name = None, regex = "(?!)".r, isBegin = false,
+  name = None, regex = "\\b\\B".r, isBegin = false,
   endPattern = None, endCaptures = None, captures = None,
   innerPatternKey = None, contentName = None, isSelfMarker = true,
 )
@@ -41,17 +48,173 @@ class Tokenizer(grammar: Grammar):
 
   private val resolvedCache = mutable.Map[String, List[ResolvedPattern]]()
 
+  // Diagnostics: every regex that fails to compile during pattern resolution
+  // gets recorded here so the surrounding `Highlighter` can expose it via
+  // `loadWarnings`. Without this, every Java-incompatible TextMate regex
+  // (Oniguruma atomic groups, possessive quantifiers, etc.) silently
+  // disappears and the user has no signal that the grammar is partially
+  // dead. The buffer survives for the life of the Tokenizer.
+  private val warningsBuf = mutable.ListBuffer[String]()
+
+  def loadWarnings: List[String] = warningsBuf.toList
+
+  // resolveAndCache MUST run after warningsBuf is initialized — Scala
+  // initializes vals top-to-bottom, so this assignment lives below the
+  // buffer declaration on purpose. Don't reorder.
   private val topPatterns: List[ResolvedPattern] = resolveAndCache("$top", grammar.patterns)
 
+  /** Bridge from Oniguruma-flavoured TextMate regex to java.util.regex.
+    * VS Code grammars are written for Oniguruma, which is more permissive
+    * than Java about a few constructs. Handle the cases that show up most
+    * often in real grammars; leave Java-native syntax alone.
+    *
+    * Each step is idempotent so they compose freely.
+    */
   private def preprocessRegex(pat: String): String =
     var result = pat
+    // 1. POSIX character classes — Java accepts `\p{Alnum}` style, not
+    //    `[:alnum:]`. Translation table lives in this file's helpers.
     for cls <- posixClasses do
       result = result.replace(cls, translatePosixClass(cls))
+    // 2. Strip `(?#…)` comments. Oniguruma + Python accept them; Java
+    //    treats `(?` as the start of a flag/group-modifier and chokes on
+    //    `#`. Removing them is safe — they're prose for humans.
+    result = stripInlineComments(result)
+    // 3. Python-style named group `(?P<name>X)` → Java `(?<name>X)`. The
+    //    leading `P` is the only spelling Java rejects.
+    result = result.replace("(?P<", "(?<")
+    // 4. `{,n}` (empty min) → `{0,n}`. Oniguruma + Perl accept the empty
+    //    min; Java requires it explicit.
+    result = fillEmptyQuantMin(result)
+    // 5. Escape every `{` that isn't part of a valid `{n}` / `{n,}` /
+    //    `{n,m}` quantifier. Without this, a literal `{` in a CSS rule
+    //    or shell brace expansion explodes Java's regex parser.
+    result = escapeLiteralBraces(result)
     result
 
+  /** Strip `(?#…)` comment groups. Oniguruma / Python accept them as
+    * inline comments inside a regex; java.util.regex does not. The body
+    * may contain anything except a closing paren — there's no nested
+    * paren handling because TextMate grammars don't nest comments. */
+  private def stripInlineComments(pat: String): String =
+    val sb = new StringBuilder
+    var i = 0
+    while i < pat.length do
+      if i + 2 < pat.length && pat.charAt(i) == '(' && pat.charAt(i + 1) == '?' && pat.charAt(i + 2) == '#' then
+        // Skip until matching `)`
+        var j = i + 3
+        while j < pat.length && pat.charAt(j) != ')' do j += 1
+        if j < pat.length then i = j + 1
+        else
+          // Unterminated — just skip the marker; degenerate cases
+          sb.append(pat.charAt(i))
+          i += 1
+      else
+        sb.append(pat.charAt(i))
+        i += 1
+    sb.toString
+
+  /** Rewrite `{,n}` (no lower bound) to `{0,n}`. Walks the string
+    * character-by-character so the rule respects backslash escapes and
+    * doesn't fire inside character classes by accident. */
+  private def fillEmptyQuantMin(pat: String): String =
+    val sb = new StringBuilder
+    var i = 0
+    while i < pat.length do
+      val c = pat.charAt(i)
+      if c == '\\' && i + 1 < pat.length then
+        sb.append(c).append(pat.charAt(i + 1))
+        i += 2
+      else if c == '{' && i + 1 < pat.length && pat.charAt(i + 1) == ',' then
+        // Look for `,N}` after the leading `,` — only rewrite if it
+        // looks like a quantifier (digits then `}`).
+        var j = i + 2
+        while j < pat.length && pat.charAt(j).isDigit do j += 1
+        if j < pat.length && pat.charAt(j) == '}' && j > i + 2 then
+          sb.append("{0")
+          i += 1 // step over the `{`, the `,` lands next pass
+        else
+          sb.append(c)
+          i += 1
+      else
+        sb.append(c)
+        i += 1
+    sb.toString
+
+  /** Escape literal `{` outside a valid quantifier. A valid quantifier is
+    * `{n}` / `{n,}` / `{n,m}` where n and m are digits. Anything else —
+    * `{`, `{x`, `{,`, `{abc}` — should be a literal `{`, not an error.
+    *
+    * Skip:
+    *   - `\X` escapes in general (already escaped — leave the `{` alone)
+    *   - `\p{Name}` / `\P{Name}` Unicode property escapes — those `{`
+    *     are part of Java's required syntax, not a quantifier and not
+    *     a literal we should escape
+    *   - `\Q…\E` literal blocks — leave their interior alone (we don't
+    *     emit these but a raw grammar might)
+    */
+  private def escapeLiteralBraces(pat: String): String =
+    val sb = new StringBuilder
+    var i = 0
+    while i < pat.length do
+      val c = pat.charAt(i)
+      if c == '\\' && i + 1 < pat.length then
+        val next = pat.charAt(i + 1)
+        // Java-native braced escapes: `\p{Name}`, `\P{Name}` (Unicode
+        // property), `\x{HHHH}` (hex code point). All three use `{...}`
+        // as syntax, not as literal braces — copy them through verbatim.
+        if (next == 'p' || next == 'P' || next == 'x') &&
+            i + 2 < pat.length && pat.charAt(i + 2) == '{' then
+          var j = i + 3
+          while j < pat.length && pat.charAt(j) != '}' do j += 1
+          if j < pat.length then
+            sb.append(pat.substring(i, j + 1))
+            i = j + 1
+          else
+            // Unterminated — pass through, let Java complain.
+            sb.append(pat.charAt(i)).append(next)
+            i += 2
+        else
+          sb.append(c).append(next)
+          i += 2
+      else if c == '{' then
+        // Probe forward to see if this looks like a valid quantifier.
+        var j = i + 1
+        val firstDigitStart = j
+        while j < pat.length && pat.charAt(j).isDigit do j += 1
+        val hasFirstDigits = j > firstDigitStart
+        var valid = false
+        if hasFirstDigits then
+          if j < pat.length && pat.charAt(j) == '}' then
+            valid = true // {n}
+          else if j < pat.length && pat.charAt(j) == ',' then
+            j += 1
+            while j < pat.length && pat.charAt(j).isDigit do j += 1
+            if j < pat.length && pat.charAt(j) == '}' then valid = true // {n,} or {n,m}
+        if valid then
+          sb.append(c)
+          i += 1
+        else
+          sb.append("\\{")
+          i += 1
+      else
+        sb.append(c)
+        i += 1
+    sb.toString
+
+  /** Compile `pat` to a [[Regex]]. On failure, record the original (pre-
+    * processed) source plus the engine's complaint in [[loadWarnings]]
+    * and return `None`. The caller (resolveOne) drops the pattern so the
+    * rest of the grammar still loads — the alternative would be to fail
+    * the whole `fromJson`, which loses many usable patterns to one bad
+    * one in a 6000-line VS Code grammar. The warning list lets callers
+    * surface the breakage instead of silently swallowing it. */
   private def compileRegex(pat: String): Option[Regex] =
-    try Some(new Regex(preprocessRegex(pat)))
-    catch case _: Exception => None
+    val processed = preprocessRegex(pat)
+    try Some(new Regex(processed))
+    catch case e: Exception =>
+      warningsBuf += s"regex compile failed: $pat — ${e.getMessage}"
+      None
 
   private def resolveAndCache(key: String, patterns: List[Pattern]): List[ResolvedPattern] =
     resolvedCache.get(key) match
@@ -149,7 +312,12 @@ class Tokenizer(grammar: Grammar):
             case Some(n) if n > 0 && n <= m.groupCount =>
               val gs = m.start(n)
               val ge = m.end(n)
-              if gs >= 0 && ge >= 0 then
+              // Filter out captures that fall outside the visible match
+              // window. A lookahead like `(?=...)` produces capture
+              // groups whose offsets sit AFTER `m.end`; substringing
+              // `matchedText` with those would throw. Same for lookbehind
+              // captures (rare, but possible) which sit before `m.start`.
+              if gs >= 0 && ge >= 0 && gs >= m.start && ge <= m.end then
                 entry.name.foreach { name =>
                   segments += ((gs, ge, baseScopes ++ patternName.toList ++ List(name)))
                 }
@@ -163,12 +331,13 @@ class Tokenizer(grammar: Grammar):
           val sorted = segments.sortBy(_._1).toList
           var pos = 0
           for (gs, ge, scopes) <- sorted do
-            val relStart = gs - m.start
-            val relEnd = ge - m.start
+            val relStart = math.min(gs - m.start, matchedText.length)
+            val relEnd   = math.min(ge - m.start, matchedText.length)
             if relStart > pos then
               tokens += Token(matchedText.substring(pos, relStart), effectiveScopes)
-            tokens += Token(matchedText.substring(relStart, relEnd), scopes)
-            pos = relEnd
+            if relEnd > relStart then
+              tokens += Token(matchedText.substring(relStart, relEnd), scopes)
+              pos = relEnd
           if pos < matchedText.length then
             tokens += Token(matchedText.substring(pos), effectiveScopes)
 

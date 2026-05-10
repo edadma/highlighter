@@ -558,23 +558,79 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
 
   "loader hardening" - {
 
-    // TODO: un-ignore when compileRegex stops swallowing exceptions.
-    // Currently it returns None on regex compile failure and the pattern
-    // is silently dropped — which is exactly why JS strings/keywords
-    // never highlight: a Java-incompatible regex compiles to None and
-    // the rest of the grammar carries on with that pattern missing.
-    "fromJson surfaces regex compile failures" ignore {
-      // (?P<name>...) is a Python/Oniguruma named-group syntax that Java
-      // doesn't accept (Java uses (?<name>...) without the P).
+    // `\g<name>` is Oniguruma's recursive-subroutine syntax — Java's
+    // regex has nothing equivalent and the preprocessing pipeline
+    // intentionally doesn't try to polyfill it. The grammar is still
+    // loadable — the bad pattern is just dropped — but `loadWarnings`
+    // must surface it so callers can diagnose.
+    "fromJson exposes regex compile failures via loadWarnings" in {
       val bad = """{
         "scopeName": "source.bad",
-        "patterns": [ { "match": "(?P<x>foo)", "name": "keyword.bad" } ]
+        "patterns": [ { "match": "(?<grp>foo)\\g<grp>", "name": "keyword.bad" } ]
       }"""
-      val res = Highlighter.fromJson(bad, ClassMode("hl-"))
-      // Either a Left, or a Right with a `loadWarnings` collection — pick
-      // a contract once the fix lands. The current behavior (Right with
-      // silent drop) IS the bug.
-      res.isLeft shouldBe true
+      val hl = Highlighter.fromJson(bad, ClassMode("hl-"))
+        .getOrElse(fail("fromJson should still succeed on partial-load"))
+      hl.loadWarnings should not be empty
+      hl.loadWarnings.mkString(" ") should include("\\g<grp>")
+    }
+
+    "preprocessor handles (?P<name>…) → (?<name>…)" in {
+      val good = """{
+        "scopeName": "source.good",
+        "patterns": [ { "match": "(?P<x>foo)", "name": "keyword.good" } ]
+      }"""
+      val hl = Highlighter.fromJson(good, ClassMode("hl-"))
+        .getOrElse(fail("preprocessed grammar should load"))
+      hl.loadWarnings shouldBe empty
+      hl.highlight("foo").shouldHighlight("keyword", "foo")
+    }
+
+    "preprocessor handles (?#comment) inline-comment groups" in {
+      val good = """{
+        "scopeName": "source.good",
+        "patterns": [ { "match": "f(?#middle)oo", "name": "keyword.good" } ]
+      }"""
+      val hl = Highlighter.fromJson(good, ClassMode("hl-"))
+        .getOrElse(fail("preprocessed grammar should load"))
+      hl.loadWarnings shouldBe empty
+      hl.highlight("foo").shouldHighlight("keyword", "foo")
+    }
+
+    "preprocessor handles {,n} empty-min quantifier" in {
+      val good = """{
+        "scopeName": "source.good",
+        "patterns": [ { "match": "f{,3}o", "name": "keyword.good" } ]
+      }"""
+      val hl = Highlighter.fromJson(good, ClassMode("hl-"))
+        .getOrElse(fail("preprocessed grammar should load"))
+      hl.loadWarnings shouldBe empty
+      hl.highlight("ffo").shouldHighlight("keyword", "ffo")
+    }
+
+    "preprocessor escapes literal { without breaking quantifiers" in {
+      val good = """{
+        "scopeName": "source.good",
+        "patterns": [
+          { "match": "a{3}", "name": "keyword.good" },
+          { "match": "\\{x\\}", "name": "string.good" },
+          { "match": "y{",    "name": "punctuation.good" }
+        ]
+      }"""
+      val hl = Highlighter.fromJson(good, ClassMode("hl-"))
+        .getOrElse(fail("preprocessed grammar should load"))
+      hl.loadWarnings shouldBe empty
+      hl.highlight("aaa").shouldHighlight("keyword", "aaa")
+      hl.highlight("y{").shouldHighlight("punctuation")
+    }
+
+    "loadWarnings is empty when every pattern compiles" in {
+      val good = """{
+        "scopeName": "source.good",
+        "patterns": [ { "match": "\\bfoo\\b", "name": "keyword.good" } ]
+      }"""
+      val hl = Highlighter.fromJson(good, ClassMode("hl-"))
+        .getOrElse(fail("good grammar should load"))
+      hl.loadWarnings shouldBe empty
     }
   }
 }

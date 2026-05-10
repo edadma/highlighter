@@ -5,6 +5,17 @@ import zio.json.*
 class Highlighter(grammar: Grammar, mode: RenderMode = ClassMode()):
   private val tokenizer = new Tokenizer(grammar)
 
+  /** Diagnostic warnings collected while resolving the grammar's patterns —
+    * every regex that failed to compile (typically because it uses
+    * Oniguruma syntax that java.util.regex doesn't accept) lands here.
+    * Empty list means "every pattern compiled cleanly".
+    *
+    * Tools should print these once (see `Highlighter.fromJson` for the
+    * convenience constructor that does that automatically). The buffer
+    * is captured at construction time so reading this is free.
+    */
+  def loadWarnings: List[String] = tokenizer.loadWarnings
+
   def highlight(code: String): String =
     val tokenLines = tokenizer.tokenize(code)
     tokenLines
