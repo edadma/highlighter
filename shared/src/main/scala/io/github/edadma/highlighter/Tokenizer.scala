@@ -38,6 +38,14 @@ case class StateFrame(
     endCaptures: Option[Map[String, CaptureEntry]],
     scopeName: Option[String],
     contentName: Option[String],
+    // Position at which this frame was pushed. The tokenizer compares
+    // this against the current pos when the END pattern fires: if the
+    // end matches at the same offset where the begin pushed, the
+    // frame consumed nothing — and a zero-length end after a zero-
+    // length begin would otherwise cycle forever (the begin re-fires
+    // at the same pos in the next iteration). We force a single
+    // codepoint of progress in that case so the loop terminates.
+    pushPos: Int = -1,
 )
 
 class Tokenizer(grammar: Grammar):
@@ -249,135 +257,149 @@ class Tokenizer(grammar: Grammar):
     var pos = 0
     var stateStack = initialStack
 
+    // No-progress cycle break: a TextMate grammar can have a zero-
+    // length begin whose pushed inner state has a zero-length end
+    // (bash's `command_statement` / `command_name_range` pair is the
+    // canonical case). The pop returns to the begin's offset, the
+    // outer begin re-fires at that same offset, and the stack
+    // oscillates between two depths at one position forever.
+    //
+    // Track every (pos, stack-depth) pair we've visited within this
+    // line. If we revisit one, the previous push/pop made no
+    // semantic progress — force one codepoint of advance under the
+    // current scope so tokenization moves past the trap. The set
+    // gets cleared after a real pos advance so legitimate cases
+    // that re-enter the same depth at a later pos are unaffected.
+    val visited = scala.collection.mutable.Set.empty[(Int, Int)]
+
     while pos < line.length do
-      val currentFrame = stateStack.head
-
-      // Try end pattern of current state — scan forward from pos.
-      val endResult = currentFrame.endRegex.flatMap { er =>
-        er.matchAt(line, pos, pos) match
-          case some @ Some(_) => some.map(m => (m, m.start, m.end))
-          case None =>
-            // matchAt is anchored. For end, we need to scan forward —
-            // try positions one codepoint at a time until we find the
-            // next match or run off the end. Iterate by code point so
-            // supplementary chars stay atomic.
-            var p = pos
-            var found: Option[(OnigMatch, Int, Int)] = None
-            while p < line.length && found.isEmpty do
-              val cp = line.codePointAt(p)
-              p += Character.charCount(cp)
-              er.matchAt(line, p, pos) match
-                case Some(m) => found = Some((m, m.start, m.end))
-                case None    => ()
-            found
-      }
-
-      // Try all active patterns at pos (anchored). The FIRST one that
-      // matches wins — TextMate spec: list order is priority.
-      var bestPat: ResolvedPattern = null
-      var bestMatch: OnigMatch = null
-      var i = 0
-      val patsArr = currentFrame.patterns.toArray
-      while bestPat == null && i < patsArr.length do
-        val rp = patsArr(i)
-        if !rp.isSelfMarker then
-          rp.regex.matchAt(line, pos, pos) match
-            case Some(m) =>
-              bestPat = rp
-              bestMatch = m
-            case None => ()
-        i += 1
-
-      // If nothing anchored at pos, find next position any pattern fires
-      // (scan-forward optimization so we don't try every pattern at every
-      // char). Iterate by codepoint.
-      if bestPat == null then
-        var p = pos
-        var earliestStart = Int.MaxValue
-        var earliestPat: ResolvedPattern = null
-        var earliestMatch: OnigMatch = null
-        // Walk codepoint-by-codepoint. Cap the search by emitting a
-        // single gap and looping when found; if nothing fires, the
-        // whole rest of the line is plain text.
-        while p < line.length && earliestPat == null do
-          val cp = line.codePointAt(p)
-          p += Character.charCount(cp)
-          var j = 0
-          while j < patsArr.length && earliestPat == null do
-            val rp = patsArr(j)
-            if !rp.isSelfMarker then
-              rp.regex.matchAt(line, p, pos) match
-                case Some(m) =>
-                  earliestPat = rp
-                  earliestMatch = m
-                  earliestStart = p
-                case None => ()
-            j += 1
-        if earliestPat != null then
-          bestPat = earliestPat
-          bestMatch = earliestMatch
-
-      val bestStart = if bestPat != null then bestMatch.start else Int.MaxValue
-
-      // End pattern wins ties — at-or-before-best.
-      val useEnd = endResult match
-        case Some((_, endStart, _)) => bestPat == null || endStart <= bestStart
-        case None                   => false
-
-      if useEnd then
-        val (endM, endStart, endEnd) = endResult.get
-        if endStart > pos then
-          tokens += Token(line.substring(pos, endStart), scopesFromStack(stateStack))
-        if endM.matched.nonEmpty then
-          emitWithCaptures(
-            endM.matched, endM, pos, currentFrame.endCaptures,
-            scopesFromStack(stateStack.tail), stateStack.head.scopeName, tokens,
-          )
-        pos = endEnd
-        stateStack = stateStack.tail
-
-      else if bestPat != null then
-        val matchStart = bestStart
-        val matchEnd = bestMatch.end
-
-        if matchStart > pos then
-          tokens += Token(line.substring(pos, matchStart), scopesFromStack(stateStack))
-
-        // Guard against zero-length matches causing infinite loops
-        if matchEnd == matchStart && !bestPat.isBegin then
-          tokens += Token(line.substring(matchStart, matchStart + 1), scopesFromStack(stateStack))
-          pos = matchStart + 1
-        else if !bestPat.isBegin then
-          // Simple match — emit with captures
-          emitWithCaptures(
-            bestMatch.matched, bestMatch, matchStart, bestPat.captures,
-            scopesFromStack(stateStack), bestPat.name, tokens,
-          )
-          pos = matchEnd
-        else
-          // Begin/end — emit begin with captures, push state
-          emitWithCaptures(
-            bestMatch.matched, bestMatch, matchStart, bestPat.captures,
-            scopesFromStack(stateStack), bestPat.name, tokens,
-          )
-          val endRegex = bestPat.endRegex
-          val rawInner = bestPat.innerPatternKey
-            .flatMap(resolvedCache.get)
-            .getOrElse(Nil)
-          // Replace $self markers with the fully resolved top-level patterns
-          val innerPatterns = rawInner.flatMap { rp =>
-            if rp.isSelfMarker then topPatterns else List(rp)
-          }
-          stateStack = StateFrame(
-            patterns = innerPatterns,
-            endRegex = endRegex,
-            endCaptures = bestPat.endCaptures,
-            scopeName = bestPat.name,
-            contentName = bestPat.contentName,
-          ) :: stateStack
-          pos = matchEnd
+      val key = (pos, stateStack.length)
+      if visited.contains(key) then
+        val cp      = line.codePointAt(pos)
+        val advance = Character.charCount(cp)
+        tokens += Token(line.substring(pos, pos + advance), scopesFromStack(stateStack))
+        pos += advance
+        visited.clear()
       else
-        tokens += Token(line.substring(pos), scopesFromStack(stateStack))
-        pos = line.length
+        visited += key
+        val posBefore = pos
+        val currentFrame = stateStack.head
+
+        // Try end pattern of current state — anchored first, then scan-forward.
+        val endResult = currentFrame.endRegex.flatMap { er =>
+          er.matchAt(line, pos, pos) match
+            case some @ Some(_) => some.map(m => (m, m.start, m.end))
+            case None =>
+              var p = pos
+              var found: Option[(OnigMatch, Int, Int)] = None
+              while p < line.length && found.isEmpty do
+                val cp = line.codePointAt(p)
+                p += Character.charCount(cp)
+                er.matchAt(line, p, pos) match
+                  case Some(m) => found = Some((m, m.start, m.end))
+                  case None    => ()
+              found
+        }
+
+        // Try all active patterns at pos (anchored). FIRST match wins.
+        var bestPat: ResolvedPattern = null
+        var bestMatch: OnigMatch = null
+        val patsArr = currentFrame.patterns.toArray
+        var i = 0
+        while bestPat == null && i < patsArr.length do
+          val rp = patsArr(i)
+          if !rp.isSelfMarker then
+            rp.regex.matchAt(line, pos, pos) match
+              case Some(m) =>
+                bestPat = rp
+                bestMatch = m
+              case None => ()
+          i += 1
+
+        // If nothing anchored at pos, scan forward for next match.
+        if bestPat == null then
+          var p = pos
+          var earliestPat: ResolvedPattern = null
+          var earliestMatch: OnigMatch = null
+          while p < line.length && earliestPat == null do
+            val cp = line.codePointAt(p)
+            p += Character.charCount(cp)
+            var j = 0
+            while j < patsArr.length && earliestPat == null do
+              val rp = patsArr(j)
+              if !rp.isSelfMarker then
+                rp.regex.matchAt(line, p, pos) match
+                  case Some(m) =>
+                    earliestPat = rp
+                    earliestMatch = m
+                  case None => ()
+              j += 1
+          if earliestPat != null then
+            bestPat = earliestPat
+            bestMatch = earliestMatch
+
+        val bestStart = if bestPat != null then bestMatch.start else Int.MaxValue
+
+        // End pattern wins ties.
+        val useEnd = endResult match
+          case Some((_, endStart, _)) => bestPat == null || endStart <= bestStart
+          case None                   => false
+
+        if useEnd then
+          val (endM, endStart, endEnd) = endResult.get
+          if endStart > pos then
+            tokens += Token(line.substring(pos, endStart), scopesFromStack(stateStack))
+          if endM.matched.nonEmpty then
+            emitWithCaptures(
+              endM.matched, endM, pos, currentFrame.endCaptures,
+              scopesFromStack(stateStack.tail), stateStack.head.scopeName, tokens,
+            )
+          pos = endEnd
+          stateStack = stateStack.tail
+
+        else if bestPat != null then
+          val matchStart = bestStart
+          val matchEnd = bestMatch.end
+
+          if matchStart > pos then
+            tokens += Token(line.substring(pos, matchStart), scopesFromStack(stateStack))
+
+          // Guard against zero-length non-begin matches infinite-looping.
+          if matchEnd == matchStart && !bestPat.isBegin then
+            tokens += Token(line.substring(matchStart, matchStart + 1), scopesFromStack(stateStack))
+            pos = matchStart + 1
+          else if !bestPat.isBegin then
+            emitWithCaptures(
+              bestMatch.matched, bestMatch, matchStart, bestPat.captures,
+              scopesFromStack(stateStack), bestPat.name, tokens,
+            )
+            pos = matchEnd
+          else
+            // Begin/end — emit begin with captures, push state
+            emitWithCaptures(
+              bestMatch.matched, bestMatch, matchStart, bestPat.captures,
+              scopesFromStack(stateStack), bestPat.name, tokens,
+            )
+            val endRegex = bestPat.endRegex
+            val rawInner = bestPat.innerPatternKey
+              .flatMap(resolvedCache.get)
+              .getOrElse(Nil)
+            val innerPatterns = rawInner.flatMap { rp =>
+              if rp.isSelfMarker then topPatterns else List(rp)
+            }
+            stateStack = StateFrame(
+              patterns = innerPatterns,
+              endRegex = endRegex,
+              endCaptures = bestPat.endCaptures,
+              scopeName = bestPat.name,
+              contentName = bestPat.contentName,
+              pushPos = matchEnd,
+            ) :: stateStack
+            pos = matchEnd
+        else
+          tokens += Token(line.substring(pos), scopesFromStack(stateStack))
+          pos = line.length
+
+        if pos != posBefore then visited.clear()
 
     (tokens.toList, stateStack)

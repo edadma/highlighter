@@ -187,13 +187,7 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("bash").highlight("""x='hello'""").shouldHighlight("string")
     }
 
-    // Still hangs >25s under oniguruma 0.0.4 (post 6.D empty-body
-    // progress fix). Stage 6.D resolved the empty-body pathology
-    // class, so this is a different shape — the bash grammar's
-    // #qstring-double inner pattern set has whatever blow-up
-    // structure that 6.D doesn't catch. juicer's per-block 5s
-    // timeout still protects deployments.
-    "variable expansion inside string" ignore {
+    "variable expansion inside string" in {
       hl("bash").highlight("""echo "$HOME"""").shouldHighlight("variable")
     }
 
@@ -201,10 +195,7 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("bash").highlight("if true; then echo y; fi").shouldHighlight("keyword", "if")
     }
 
-    // Same shape as 'variable expansion inside string' above — still
-    // hangs >20s under oniguruma 0.0.4 + Stage 6.D. The bash grammar's
-    // for-loop pattern has whatever blow-up structure 6.D doesn't catch.
-    "for keyword" ignore {
+    "for keyword" in {
       hl("bash").highlight("for i in 1 2 3; do echo $i; done").shouldHighlight("keyword", "for")
     }
   }
