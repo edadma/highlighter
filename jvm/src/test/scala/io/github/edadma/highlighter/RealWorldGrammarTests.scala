@@ -310,6 +310,39 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
     "list item" in {
       hl("yaml").highlight("- item").shouldHighlight("punctuation")
     }
+
+    // TODO: un-ignore when the pure-Scala Oniguruma engine lands.
+    //
+    // `2024-03-12` renders with `-12` highlighted as a number, splitting
+    // the date in half. Two layered causes, both of which the new
+    // Oniguruma engine fixes:
+    //
+    //   1. java.util.regex doesn't support Oniguruma's nested character
+    //      classes (`[^\s[-?:,…]]`), so the YAML grammar's
+    //      flow-scalar-plain begin pattern silently fails to compile —
+    //      `loadWarnings` shows ~36 dropped patterns. The unquoted-
+    //      scalar rule that should consume `2024-03-12` whole never
+    //      fires.
+    //
+    //   2. Our tokenizer uses scan-forward (`findFirstMatchIn`) rather
+    //      than TextMate-correct anchored matching. The integer rule
+    //      `[-+]?[0-9]+` followed by EOL fails at pos 0 (next is `-`)
+    //      but matches at pos 7 (`-12$`). Scan-forward jumps there.
+    //
+    // Tried fixing (2) via Matcher.region+lookingAt + transparent bounds
+    // for proper anchored matching: the iso-date case still failed
+    // because the plain-scalar rule from (1) is missing, AND the change
+    // broke 8 other tests where the existing grammars relied on the
+    // current scan-forward behavior. Reverted.
+    "iso date — no spurious number inside `2024-03-12`" ignore {
+      val out = hl("yaml").highlight("date: 2024-03-12")
+      out should not include """<span class="hl-number">-12</span>"""
+    }
+
+    "negative integer at start of value highlights as number" in {
+      val out = hl("yaml").highlight("count: -12")
+      out.shouldHighlight("number", "-12")
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────
