@@ -3,6 +3,28 @@ package io.github.edadma.highlighter
 import scala.util.matching.Regex
 import scala.collection.mutable
 
+/** CharSequence wrapper that throws `InterruptedException` from `charAt`
+  * when the current thread's interrupt flag is set. Wrapping the substring
+  * passed to `Regex.findFirstMatchIn` makes the JVM matcher abort
+  * mid-match instead of running forever — essential because some
+  * VS Code TextMate patterns trigger catastrophic backtracking under
+  * java.util.regex (which has no built-in match timeout). The check is
+  * cheap (a single volatile read) and the substring is only walked
+  * char-by-char by the regex engine, so the wrapper has no measurable
+  * overhead in the happy path.
+  *
+  * On JS / Native, `Thread.interrupted()` is a no-op stub — `charAt`
+  * just delegates. That's correct: those backends don't need interrupts
+  * because they're not running in long-lived multi-threaded contexts
+  * where one bad input would block other work. */
+private[highlighter] final class InterruptibleCharSequence(s: CharSequence) extends CharSequence:
+  def length: Int                             = s.length
+  def subSequence(start: Int, end: Int)       = new InterruptibleCharSequence(s.subSequence(start, end))
+  override def toString                       = s.toString
+  def charAt(i: Int): Char =
+    if Thread.interrupted() then throw new InterruptedException("highlight interrupted")
+    s.charAt(i)
+
 case class ResolvedPattern(
     name: Option[String],
     regex: Regex,
@@ -403,7 +425,10 @@ class Tokenizer(grammar: Grammar):
 
     while pos < line.length do
       val currentFrame = stateStack.head
-      val sub = line.substring(pos)
+      // Wrap once per token-position so every regex matcher uses the
+      // interruptible variant. See InterruptibleCharSequence's comment
+      // for why this is necessary on JVM with java.util.regex.
+      val sub = new InterruptibleCharSequence(line.substring(pos))
 
       // Try end pattern of current state
       val endResult = currentFrame.endRegex.flatMap { er =>
