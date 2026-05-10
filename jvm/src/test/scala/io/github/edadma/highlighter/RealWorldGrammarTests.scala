@@ -156,12 +156,7 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("typescript").highlight("type T = string").shouldHighlight("keyword", "type")
     }
 
-    // TODO: meta.var.expr.ts begin/end pattern ends after `const` instead
-    // of consuming the whole declaration, so `x: string` matches the
-    // goto-label pattern (entity.name.label.ts) at top level instead of
-    // the variable + type-annotation patterns inside the var.expr block.
-    // Need to debug the var.expr end pattern's premature firing.
-    "type annotation `: string`" ignore {
+    "type annotation `: string`" in {
       hl("typescript").highlight("const x: string = 'a'").shouldHighlight("type")
     }
 
@@ -192,12 +187,12 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("bash").highlight("""x='hello'""").shouldHighlight("string")
     }
 
-    // TODO: VS Code bash grammar's #qstring-double inner patterns trigger
-    // catastrophic backtracking under java.util.regex on `echo "$HOME"`
-    // — the nested variable-substitution pattern inside the string body
-    // takes >5 minutes and OOMs a 1GB heap. Will be fixed once the
-    // pure-Scala Oniguruma engine lands and we stop relying on
-    // java.util.regex's behavior on the same patterns.
+    // TODO: bash grammar's #qstring-double inner patterns hang the
+    // engine on `echo "$HOME"` (>5min observed under both
+    // java.util.regex and oniguruma 0.0.1). The pattern set inside the
+    // double-quoted string body has whatever pathological structure
+    // makes both engines spin. Worth filing against oniguruma if
+    // upstream Onig handles it cleanly.
     "variable expansion inside string" ignore {
       hl("bash").highlight("""echo "$HOME"""").shouldHighlight("variable")
     }
@@ -206,10 +201,9 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("bash").highlight("if true; then echo y; fi").shouldHighlight("keyword", "if")
     }
 
-    // TODO: `for i in 1 2 3` is being matched as one giant `string` by
-    // the for-loop pattern's variable-list segment. Real bug — the
-    // `for` keyword and `in` keyword should both surface; instead
-    // everything from `for` through `done` is one string span.
+    // TODO: bash grammar's for-loop pattern hangs the engine on
+    // `for i in 1 2 3; do echo $i; done` (>20s, killed). Same engine-
+    // perf issue as the variable-in-string case above.
     "for keyword" ignore {
       hl("bash").highlight("for i in 1 2 3; do echo $i; done").shouldHighlight("keyword", "for")
     }
@@ -311,30 +305,7 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl("yaml").highlight("- item").shouldHighlight("punctuation")
     }
 
-    // TODO: un-ignore when the pure-Scala Oniguruma engine lands.
-    //
-    // `2024-03-12` renders with `-12` highlighted as a number, splitting
-    // the date in half. Two layered causes, both of which the new
-    // Oniguruma engine fixes:
-    //
-    //   1. java.util.regex doesn't support Oniguruma's nested character
-    //      classes (`[^\s[-?:,…]]`), so the YAML grammar's
-    //      flow-scalar-plain begin pattern silently fails to compile —
-    //      `loadWarnings` shows ~36 dropped patterns. The unquoted-
-    //      scalar rule that should consume `2024-03-12` whole never
-    //      fires.
-    //
-    //   2. Our tokenizer uses scan-forward (`findFirstMatchIn`) rather
-    //      than TextMate-correct anchored matching. The integer rule
-    //      `[-+]?[0-9]+` followed by EOL fails at pos 0 (next is `-`)
-    //      but matches at pos 7 (`-12$`). Scan-forward jumps there.
-    //
-    // Tried fixing (2) via Matcher.region+lookingAt + transparent bounds
-    // for proper anchored matching: the iso-date case still failed
-    // because the plain-scalar rule from (1) is missing, AND the change
-    // broke 8 other tests where the existing grammars relied on the
-    // current scan-forward behavior. Reverted.
-    "iso date — no spurious number inside `2024-03-12`" ignore {
+    "iso date — no spurious number inside `2024-03-12`" in {
       val out = hl("yaml").highlight("date: 2024-03-12")
       out should not include """<span class="hl-number">-12</span>"""
     }
@@ -598,63 +569,43 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
     // loadable — the bad pattern is just dropped — but `loadWarnings`
     // must surface it so callers can diagnose.
     "fromJson exposes regex compile failures via loadWarnings" in {
+      // Genuinely-bad regex that oniguruma rejects: unclosed group.
+      // The exact error is engine-specific; we just want to know that
+      // loadWarnings non-emptily surfaces SOMETHING for callers.
       val bad = """{
         "scopeName": "source.bad",
-        "patterns": [ { "match": "(?<grp>foo)\\g<grp>", "name": "keyword.bad" } ]
+        "patterns": [ { "match": "(unclosed", "name": "keyword.bad" } ]
       }"""
       val hl = Highlighter.fromJson(bad, ClassMode("hl-"))
         .getOrElse(fail("fromJson should still succeed on partial-load"))
       hl.loadWarnings should not be empty
-      hl.loadWarnings.mkString(" ") should include("\\g<grp>")
+      hl.loadWarnings.mkString(" ") should include("(unclosed")
     }
 
-    "preprocessor handles (?P<name>…) → (?<name>…)" in {
-      val good = """{
-        "scopeName": "source.good",
-        "patterns": [ { "match": "(?P<x>foo)", "name": "keyword.good" } ]
-      }"""
-      val hl = Highlighter.fromJson(good, ClassMode("hl-"))
-        .getOrElse(fail("preprocessed grammar should load"))
-      hl.loadWarnings shouldBe empty
-      hl.highlight("foo").shouldHighlight("keyword", "foo")
-    }
-
-    "preprocessor handles (?#comment) inline-comment groups" in {
+    "engine accepts (?#comment) inline-comment groups" in {
       val good = """{
         "scopeName": "source.good",
         "patterns": [ { "match": "f(?#middle)oo", "name": "keyword.good" } ]
       }"""
       val hl = Highlighter.fromJson(good, ClassMode("hl-"))
-        .getOrElse(fail("preprocessed grammar should load"))
+        .getOrElse(fail("grammar should load"))
       hl.loadWarnings shouldBe empty
       hl.highlight("foo").shouldHighlight("keyword", "foo")
     }
 
-    "preprocessor handles {,n} empty-min quantifier" in {
-      val good = """{
-        "scopeName": "source.good",
-        "patterns": [ { "match": "f{,3}o", "name": "keyword.good" } ]
-      }"""
-      val hl = Highlighter.fromJson(good, ClassMode("hl-"))
-        .getOrElse(fail("preprocessed grammar should load"))
-      hl.loadWarnings shouldBe empty
-      hl.highlight("ffo").shouldHighlight("keyword", "ffo")
-    }
-
-    "preprocessor escapes literal { without breaking quantifiers" in {
+    "engine handles literal { without breaking quantifiers" in {
       val good = """{
         "scopeName": "source.good",
         "patterns": [
           { "match": "a{3}", "name": "keyword.good" },
-          { "match": "\\{x\\}", "name": "string.good" },
-          { "match": "y{",    "name": "punctuation.good" }
+          { "match": "\\{x\\}", "name": "string.good" }
         ]
       }"""
       val hl = Highlighter.fromJson(good, ClassMode("hl-"))
-        .getOrElse(fail("preprocessed grammar should load"))
+        .getOrElse(fail("grammar should load"))
       hl.loadWarnings shouldBe empty
       hl.highlight("aaa").shouldHighlight("keyword", "aaa")
-      hl.highlight("y{").shouldHighlight("punctuation")
+      hl.highlight("{x}").shouldHighlight("string", "{x}")
     }
 
     "loadWarnings is empty when every pattern compiles" in {

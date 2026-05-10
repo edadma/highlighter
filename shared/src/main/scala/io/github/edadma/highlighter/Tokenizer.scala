@@ -1,29 +1,7 @@
 package io.github.edadma.highlighter
 
-import scala.util.matching.Regex
+import io.github.edadma.oniguruma.{Regex, Match => OnigMatch}
 import scala.collection.mutable
-
-/** CharSequence wrapper that throws `InterruptedException` from `charAt`
-  * when the current thread's interrupt flag is set. Wrapping the substring
-  * passed to `Regex.findFirstMatchIn` makes the JVM matcher abort
-  * mid-match instead of running forever — essential because some
-  * VS Code TextMate patterns trigger catastrophic backtracking under
-  * java.util.regex (which has no built-in match timeout). The check is
-  * cheap (a single volatile read) and the substring is only walked
-  * char-by-char by the regex engine, so the wrapper has no measurable
-  * overhead in the happy path.
-  *
-  * On JS / Native, `Thread.interrupted()` is a no-op stub — `charAt`
-  * just delegates. That's correct: those backends don't need interrupts
-  * because they're not running in long-lived multi-threaded contexts
-  * where one bad input would block other work. */
-private[highlighter] final class InterruptibleCharSequence(s: CharSequence) extends CharSequence:
-  def length: Int                             = s.length
-  def subSequence(start: Int, end: Int)       = new InterruptibleCharSequence(s.subSequence(start, end))
-  override def toString                       = s.toString
-  def charAt(i: Int): Char =
-    if Thread.interrupted() then throw new InterruptedException("highlight interrupted")
-    s.charAt(i)
 
 case class ResolvedPattern(
     name: Option[String],
@@ -32,8 +10,8 @@ case class ResolvedPattern(
     endPattern: Option[String],
     // Pre-compiled end regex. Compiling at tokenize time on every state
     // push allocated thousands of Regex objects per line on complex
-    // grammars (bash, JS) and OOMed long-running runs. Compiled once
-    // during pattern resolution and reused.
+    // grammars (bash, JS) and noticeably hurt longer runs. Compiled
+    // once during pattern resolution and reused.
     endRegex: Option[Regex],
     endCaptures: Option[Map[String, CaptureEntry]],
     captures: Option[Map[String, CaptureEntry]], // match captures or beginCaptures
@@ -45,13 +23,11 @@ case class ResolvedPattern(
 // Sentinel pattern for $self includes — resolved lazily at tokenization
 // time. The `regex` field is filler: every consumer filters with
 // `isSelfMarker` first so the pattern is never matched against. The
-// previous filler `(?!)` (empty negative lookahead) is fine on JVM but
-// blows up on Scala Native's regex engine ("Unknown inline modifier") —
-// so we use `\b\B`, a self-contradictory pair (word-boundary AND
-// non-word-boundary at the same position) that compiles cleanly
-// everywhere and is guaranteed to never match.
+// `\b\B` body (word-boundary AND non-word-boundary at the same
+// position) compiles cleanly under both java.util.regex and oniguruma
+// and is guaranteed never to match — safe filler.
 private[highlighter] val SelfMarker = ResolvedPattern(
-  name = None, regex = "\\b\\B".r, isBegin = false,
+  name = None, regex = Regex("\\b\\B"), isBegin = false,
   endPattern = None, endRegex = None, endCaptures = None, captures = None,
   innerPatternKey = None, contentName = None, isSelfMarker = true,
 )
@@ -65,10 +41,6 @@ case class StateFrame(
 )
 
 class Tokenizer(grammar: Grammar):
-  private val posixClasses = List(
-    "[:alnum:]", "[:alpha:]", "[:digit:]", "[:lower:]", "[:upper:]",
-    "[:space:]", "[:blank:]", "[:punct:]", "[:xdigit:]", "[:ascii:]",
-  )
 
   private val repository: Map[String, RepositoryEntry] =
     grammar.repository.getOrElse(Map.empty)
@@ -78,17 +50,16 @@ class Tokenizer(grammar: Grammar):
   // resolution detects a cycle (visited.contains(key)) — instead of
   // returning Nil, we substitute whatever the previous pass managed to
   // resolve for that key. Successive passes thus monotonically grow each
-  // cyclic key (a Nil from pass N becomes the partial-but-bigger result
-  // from pass N's main resolution in pass N+1's cycle return), and the
-  // cache reaches a fixed point in 2-3 passes on real grammars.
+  // cyclic key, and the cache reaches a fixed point in 2-3 passes on
+  // real grammars.
   private var fallbackCache: Map[String, List[ResolvedPattern]] = Map.empty
 
-  // Diagnostics: every regex that fails to compile during pattern resolution
-  // gets recorded here so the surrounding `Highlighter` can expose it via
-  // `loadWarnings`. Without this, every Java-incompatible TextMate regex
-  // (Oniguruma atomic groups, possessive quantifiers, etc.) silently
-  // disappears and the user has no signal that the grammar is partially
-  // dead. The buffer survives for the life of the Tokenizer.
+  // Diagnostics: every regex that fails to compile during pattern
+  // resolution gets recorded here so the surrounding `Highlighter` can
+  // expose it via `loadWarnings`. The buffer survives for the life of
+  // the Tokenizer. With the oniguruma engine the warning list should
+  // be empty for every TextMate grammar in the wild — the engine was
+  // built to support exactly that corpus.
   private val warningsBuf = mutable.ListBuffer[String]()
 
   def loadWarnings: List[String] = warningsBuf.toList
@@ -101,12 +72,10 @@ class Tokenizer(grammar: Grammar):
   // as a fallback for cycle returns. Cyclic keys grow monotonically
   // (a Nil cycle return becomes the prior pass's partial value, which
   // is at least as large), so the iteration converges in 2-3 passes
-  // on real grammars. We compare entry COUNTS rather than contents
-  // because each pass freshly allocates Regex objects, and
-  // java.util.regex.Pattern.equals is reference-based — value-based
-  // comparison would always say "changed" and we'd run the cap forever.
-  // Cyclic-key sizes only ever grow, so size equality is a sound
-  // convergence test (total bytes can't grow without an entry growing).
+  // on real grammars. Compare entry COUNTS, not contents — Regex
+  // objects use reference identity, so value-based comparison would
+  // always say "changed" and we'd run the cap forever. Cyclic-key
+  // sizes only ever grow, so size equality is a sound convergence test.
   private val topPatterns: List[ResolvedPattern] =
     def sizeMap: Map[String, Int] =
       resolvedCache.map { case (k, v) => k -> v.length }.toMap
@@ -124,158 +93,18 @@ class Tokenizer(grammar: Grammar):
     fallbackCache = Map.empty
     resolvedCache("$top")
 
-  /** Bridge from Oniguruma-flavoured TextMate regex to java.util.regex.
-    * VS Code grammars are written for Oniguruma, which is more permissive
-    * than Java about a few constructs. Handle the cases that show up most
-    * often in real grammars; leave Java-native syntax alone.
-    *
-    * Each step is idempotent so they compose freely.
-    */
-  private def preprocessRegex(pat: String): String =
-    var result = pat
-    // 1. POSIX character classes — Java accepts `\p{Alnum}` style, not
-    //    `[:alnum:]`. Translation table lives in this file's helpers.
-    for cls <- posixClasses do
-      result = result.replace(cls, translatePosixClass(cls))
-    // 2. Strip `(?#…)` comments. Oniguruma + Python accept them; Java
-    //    treats `(?` as the start of a flag/group-modifier and chokes on
-    //    `#`. Removing them is safe — they're prose for humans.
-    result = stripInlineComments(result)
-    // 3. Python-style named group `(?P<name>X)` → Java `(?<name>X)`. The
-    //    leading `P` is the only spelling Java rejects.
-    result = result.replace("(?P<", "(?<")
-    // 4. `{,n}` (empty min) → `{0,n}`. Oniguruma + Perl accept the empty
-    //    min; Java requires it explicit.
-    result = fillEmptyQuantMin(result)
-    // 5. Escape every `{` that isn't part of a valid `{n}` / `{n,}` /
-    //    `{n,m}` quantifier. Without this, a literal `{` in a CSS rule
-    //    or shell brace expansion explodes Java's regex parser.
-    result = escapeLiteralBraces(result)
-    result
-
-  /** Strip `(?#…)` comment groups. Oniguruma / Python accept them as
-    * inline comments inside a regex; java.util.regex does not. The body
-    * may contain anything except a closing paren — there's no nested
-    * paren handling because TextMate grammars don't nest comments. */
-  private def stripInlineComments(pat: String): String =
-    val sb = new StringBuilder
-    var i = 0
-    while i < pat.length do
-      if i + 2 < pat.length && pat.charAt(i) == '(' && pat.charAt(i + 1) == '?' && pat.charAt(i + 2) == '#' then
-        // Skip until matching `)`
-        var j = i + 3
-        while j < pat.length && pat.charAt(j) != ')' do j += 1
-        if j < pat.length then i = j + 1
-        else
-          // Unterminated — just skip the marker; degenerate cases
-          sb.append(pat.charAt(i))
-          i += 1
-      else
-        sb.append(pat.charAt(i))
-        i += 1
-    sb.toString
-
-  /** Rewrite `{,n}` (no lower bound) to `{0,n}`. Walks the string
-    * character-by-character so the rule respects backslash escapes and
-    * doesn't fire inside character classes by accident. */
-  private def fillEmptyQuantMin(pat: String): String =
-    val sb = new StringBuilder
-    var i = 0
-    while i < pat.length do
-      val c = pat.charAt(i)
-      if c == '\\' && i + 1 < pat.length then
-        sb.append(c).append(pat.charAt(i + 1))
-        i += 2
-      else if c == '{' && i + 1 < pat.length && pat.charAt(i + 1) == ',' then
-        // Look for `,N}` after the leading `,` — only rewrite if it
-        // looks like a quantifier (digits then `}`).
-        var j = i + 2
-        while j < pat.length && pat.charAt(j).isDigit do j += 1
-        if j < pat.length && pat.charAt(j) == '}' && j > i + 2 then
-          sb.append("{0")
-          i += 1 // step over the `{`, the `,` lands next pass
-        else
-          sb.append(c)
-          i += 1
-      else
-        sb.append(c)
-        i += 1
-    sb.toString
-
-  /** Escape literal `{` outside a valid quantifier. A valid quantifier is
-    * `{n}` / `{n,}` / `{n,m}` where n and m are digits. Anything else —
-    * `{`, `{x`, `{,`, `{abc}` — should be a literal `{`, not an error.
-    *
-    * Skip:
-    *   - `\X` escapes in general (already escaped — leave the `{` alone)
-    *   - `\p{Name}` / `\P{Name}` Unicode property escapes — those `{`
-    *     are part of Java's required syntax, not a quantifier and not
-    *     a literal we should escape
-    *   - `\Q…\E` literal blocks — leave their interior alone (we don't
-    *     emit these but a raw grammar might)
-    */
-  private def escapeLiteralBraces(pat: String): String =
-    val sb = new StringBuilder
-    var i = 0
-    while i < pat.length do
-      val c = pat.charAt(i)
-      if c == '\\' && i + 1 < pat.length then
-        val next = pat.charAt(i + 1)
-        // Java-native braced escapes: `\p{Name}`, `\P{Name}` (Unicode
-        // property), `\x{HHHH}` (hex code point). All three use `{...}`
-        // as syntax, not as literal braces — copy them through verbatim.
-        if (next == 'p' || next == 'P' || next == 'x') &&
-            i + 2 < pat.length && pat.charAt(i + 2) == '{' then
-          var j = i + 3
-          while j < pat.length && pat.charAt(j) != '}' do j += 1
-          if j < pat.length then
-            sb.append(pat.substring(i, j + 1))
-            i = j + 1
-          else
-            // Unterminated — pass through, let Java complain.
-            sb.append(pat.charAt(i)).append(next)
-            i += 2
-        else
-          sb.append(c).append(next)
-          i += 2
-      else if c == '{' then
-        // Probe forward to see if this looks like a valid quantifier.
-        var j = i + 1
-        val firstDigitStart = j
-        while j < pat.length && pat.charAt(j).isDigit do j += 1
-        val hasFirstDigits = j > firstDigitStart
-        var valid = false
-        if hasFirstDigits then
-          if j < pat.length && pat.charAt(j) == '}' then
-            valid = true // {n}
-          else if j < pat.length && pat.charAt(j) == ',' then
-            j += 1
-            while j < pat.length && pat.charAt(j).isDigit do j += 1
-            if j < pat.length && pat.charAt(j) == '}' then valid = true // {n,} or {n,m}
-        if valid then
-          sb.append(c)
-          i += 1
-        else
-          sb.append("\\{")
-          i += 1
-      else
-        sb.append(c)
-        i += 1
-    sb.toString
-
-  /** Compile `pat` to a [[Regex]]. On failure, record the original (pre-
-    * processed) source plus the engine's complaint in [[loadWarnings]]
-    * and return `None`. The caller (resolveOne) drops the pattern so the
-    * rest of the grammar still loads — the alternative would be to fail
-    * the whole `fromJson`, which loses many usable patterns to one bad
-    * one in a 6000-line VS Code grammar. The warning list lets callers
-    * surface the breakage instead of silently swallowing it. */
+  /** Compile `pat` to a [[Regex]]. On failure, record the source plus
+    * the engine's complaint in [[loadWarnings]] and return `None`. The
+    * caller (resolveOne) drops the pattern so the rest of the grammar
+    * still loads — the alternative would be to fail the whole
+    * `fromJson`, which loses many usable patterns to one bad one in a
+    * 6000-line VS Code grammar. */
   private def compileRegex(pat: String): Option[Regex] =
-    val processed = preprocessRegex(pat)
-    try Some(new Regex(processed))
-    catch case e: Exception =>
-      warningsBuf += s"regex compile failed: $pat — ${e.getMessage}"
-      None
+    Regex.compile(pat) match
+      case Right(r) => Some(r)
+      case Left(msg) =>
+        warningsBuf += s"regex compile failed: $pat — $msg"
+        None
 
   /** `visited` is the chain of keys currently being resolved; passing it
     * through (rather than resetting to `Set(key)`) lets cycle detection
@@ -332,10 +161,7 @@ class Tokenizer(grammar: Grammar):
           compileRegex(p.begin.get).toList.map { r =>
             val innerKey = s"inner_${System.identityHashCode(p)}"
             p.patterns.foreach(ps => resolveAndCache(innerKey, ps, visited))
-            // Pre-compile the end regex once. If end is missing or fails
-            // to compile, the state pushed will have no end and never
-            // pop on its own — same behaviour as before, just no per-
-            // token-position re-compilation.
+            // Pre-compile the end regex once.
             val endRegex = p.end.flatMap(compileRegex)
             ResolvedPattern(
               p.name, r, isBegin = true, p.end, endRegex, p.endCaptures,
@@ -363,7 +189,7 @@ class Tokenizer(grammar: Grammar):
 
   private def emitWithCaptures(
       matchedText: String,
-      m: Regex.Match,
+      m: OnigMatch,
       baseOffset: Int,
       captures: Option[Map[String, CaptureEntry]],
       baseScopes: List[String],
@@ -382,17 +208,17 @@ class Tokenizer(grammar: Grammar):
         for (key, entry) <- caps do
           key.toIntOption match
             case Some(n) if n > 0 && n <= m.groupCount =>
-              val gs = m.start(n)
-              val ge = m.end(n)
-              // Filter out captures that fall outside the visible match
-              // window. A lookahead like `(?=...)` produces capture
-              // groups whose offsets sit AFTER `m.end`; substringing
-              // `matchedText` with those would throw. Same for lookbehind
-              // captures (rare, but possible) which sit before `m.start`.
-              if gs >= 0 && ge >= 0 && gs >= m.start && ge <= m.end then
-                entry.name.foreach { name =>
-                  segments += ((gs, ge, baseScopes ++ patternName.toList ++ List(name)))
-                }
+              m.groupRange(n) match
+                case Some((gs, ge)) =>
+                  // Filter captures that fall outside the visible match window.
+                  // Lookahead capture groups can sit past `m.end`; substringing
+                  // `matchedText` with those would throw. Same for lookbehind
+                  // captures sitting before `m.start`.
+                  if gs >= m.start && ge <= m.end then
+                    entry.name.foreach { name =>
+                      segments += ((gs, ge, baseScopes ++ patternName.toList ++ List(name)))
+                    }
+                case None => ()
             case _ => ()
 
         if segments.isEmpty then
@@ -425,32 +251,75 @@ class Tokenizer(grammar: Grammar):
 
     while pos < line.length do
       val currentFrame = stateStack.head
-      // Wrap once per token-position so every regex matcher uses the
-      // interruptible variant. See InterruptibleCharSequence's comment
-      // for why this is necessary on JVM with java.util.regex.
-      val sub = new InterruptibleCharSequence(line.substring(pos))
 
-      // Try end pattern of current state
+      // Try end pattern of current state — scan forward from pos.
       val endResult = currentFrame.endRegex.flatMap { er =>
-        er.findFirstMatchIn(sub).map { m =>
-          (m, m.start + pos, m.end + pos)
-        }
+        er.matchAt(line, pos, pos) match
+          case some @ Some(_) => some.map(m => (m, m.start, m.end))
+          case None =>
+            // matchAt is anchored. For end, we need to scan forward —
+            // try positions one codepoint at a time until we find the
+            // next match or run off the end. Iterate by code point so
+            // supplementary chars stay atomic.
+            var p = pos
+            var found: Option[(OnigMatch, Int, Int)] = None
+            while p < line.length && found.isEmpty do
+              val cp = line.codePointAt(p)
+              p += Character.charCount(cp)
+              er.matchAt(line, p, pos) match
+                case Some(m) => found = Some((m, m.start, m.end))
+                case None    => ()
+            found
       }
 
-      // Try all active patterns — find earliest match
+      // Try all active patterns at pos (anchored). The FIRST one that
+      // matches wins — TextMate spec: list order is priority.
       var bestPat: ResolvedPattern = null
-      var bestMatch: Regex.Match = null
-      var bestStart = Int.MaxValue
+      var bestMatch: OnigMatch = null
+      var i = 0
+      val patsArr = currentFrame.patterns.toArray
+      while bestPat == null && i < patsArr.length do
+        val rp = patsArr(i)
+        if !rp.isSelfMarker then
+          rp.regex.matchAt(line, pos, pos) match
+            case Some(m) =>
+              bestPat = rp
+              bestMatch = m
+            case None => ()
+        i += 1
 
-      for rp <- currentFrame.patterns if !rp.isSelfMarker do
-        rp.regex.findFirstMatchIn(sub) match
-          case Some(m) if m.start + pos < bestStart =>
-            bestPat = rp
-            bestMatch = m
-            bestStart = m.start + pos
-          case _ => ()
+      // If nothing anchored at pos, find next position any pattern fires
+      // (scan-forward optimization so we don't try every pattern at every
+      // char). Iterate by codepoint.
+      if bestPat == null then
+        var p = pos
+        var earliestStart = Int.MaxValue
+        var earliestPat: ResolvedPattern = null
+        var earliestMatch: OnigMatch = null
+        // Walk codepoint-by-codepoint. Cap the search by emitting a
+        // single gap and looping when found; if nothing fires, the
+        // whole rest of the line is plain text.
+        while p < line.length && earliestPat == null do
+          val cp = line.codePointAt(p)
+          p += Character.charCount(cp)
+          var j = 0
+          while j < patsArr.length && earliestPat == null do
+            val rp = patsArr(j)
+            if !rp.isSelfMarker then
+              rp.regex.matchAt(line, p, pos) match
+                case Some(m) =>
+                  earliestPat = rp
+                  earliestMatch = m
+                  earliestStart = p
+                case None => ()
+            j += 1
+        if earliestPat != null then
+          bestPat = earliestPat
+          bestMatch = earliestMatch
 
-      // End pattern wins ties
+      val bestStart = if bestPat != null then bestMatch.start else Int.MaxValue
+
+      // End pattern wins ties — at-or-before-best.
       val useEnd = endResult match
         case Some((_, endStart, _)) => bestPat == null || endStart <= bestStart
         case None                   => false
@@ -469,26 +338,26 @@ class Tokenizer(grammar: Grammar):
 
       else if bestPat != null then
         val matchStart = bestStart
-        val matchEnd = bestMatch.end + pos
+        val matchEnd = bestMatch.end
 
         if matchStart > pos then
           tokens += Token(line.substring(pos, matchStart), scopesFromStack(stateStack))
 
         // Guard against zero-length matches causing infinite loops
-        if matchEnd == pos && !bestPat.isBegin then
-          tokens += Token(line.substring(pos, pos + 1), scopesFromStack(stateStack))
-          pos += 1
+        if matchEnd == matchStart && !bestPat.isBegin then
+          tokens += Token(line.substring(matchStart, matchStart + 1), scopesFromStack(stateStack))
+          pos = matchStart + 1
         else if !bestPat.isBegin then
           // Simple match — emit with captures
           emitWithCaptures(
-            bestMatch.matched, bestMatch, pos, bestPat.captures,
+            bestMatch.matched, bestMatch, matchStart, bestPat.captures,
             scopesFromStack(stateStack), bestPat.name, tokens,
           )
           pos = matchEnd
         else
           // Begin/end — emit begin with captures, push state
           emitWithCaptures(
-            bestMatch.matched, bestMatch, pos, bestPat.captures,
+            bestMatch.matched, bestMatch, matchStart, bestPat.captures,
             scopesFromStack(stateStack), bestPat.name, tokens,
           )
           val endRegex = bestPat.endRegex
