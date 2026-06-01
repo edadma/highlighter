@@ -206,46 +206,64 @@ class Tokenizer(grammar: Grammar):
   ): Unit =
     captures match
       case Some(caps) if caps.nonEmpty =>
-        // Build a list of (start, end, scopes) for each capture group
-        val segments = mutable.ListBuffer[(Int, Int, List[String])]()
+        val mlen = matchedText.length
 
-        // Check for group 0 (whole match scope)
+        // Group 0 names the whole match; it forms the base layer that
+        // every character carries unless a numbered capture overrides it.
         val group0Scope = caps.get("0").flatMap(_.name)
         val effectiveScopes = baseScopes ++ patternName.toList ++ group0Scope.toList
 
+        // Collect every named numbered capture as a half-open range
+        // relative to `matchedText`, tagged with its group number.
+        // Capture groups can NEST (e.g. XML's `((:))` namespace
+        // separator, where group 3 and group 4 cover the same colon),
+        // so ranges may overlap; we layer them per-character below
+        // rather than emitting one token per range, which would emit the
+        // overlapped text once per covering group.
+        val covers = mutable.ListBuffer[(Int, Int, Int, String)]()
         for (key, entry) <- caps do
           key.toIntOption match
             case Some(n) if n > 0 && n <= m.groupCount =>
               m.groupRange(n) match
                 case Some((gs, ge)) =>
-                  // Filter captures that fall outside the visible match window.
-                  // Lookahead capture groups can sit past `m.end`; substringing
-                  // `matchedText` with those would throw. Same for lookbehind
-                  // captures sitting before `m.start`.
+                  // Drop captures outside the visible match window —
+                  // lookahead groups can sit past `m.end`, lookbehind
+                  // groups before `m.start`; substringing with those
+                  // would throw.
                   if gs >= m.start && ge <= m.end then
                     entry.name.foreach { name =>
-                      segments += ((gs, ge, baseScopes ++ patternName.toList ++ List(name)))
+                      val rs = math.min(gs - m.start, mlen)
+                      val re = math.min(ge - m.start, mlen)
+                      if re > rs then covers += ((n, rs, re, name))
                     }
                 case None => ()
             case _ => ()
 
-        if segments.isEmpty then
-          // Only group 0 or no valid captures
+        if covers.isEmpty then
+          // Only group 0 or no valid captures — emit the whole match once.
           tokens += Token(matchedText, effectiveScopes)
         else
-          // Sort segments by start position, emit with gaps
-          val sorted = segments.sortBy(_._1).toList
-          var pos = 0
-          for (gs, ge, scopes) <- sorted do
-            val relStart = math.min(gs - m.start, matchedText.length)
-            val relEnd   = math.min(ge - m.start, matchedText.length)
-            if relStart > pos then
-              tokens += Token(matchedText.substring(pos, relStart), effectiveScopes)
-            if relEnd > relStart then
-              tokens += Token(matchedText.substring(relStart, relEnd), scopes)
-              pos = relEnd
-          if pos < matchedText.length then
-            tokens += Token(matchedText.substring(pos), effectiveScopes)
+          // Per-character scope: the names of every capture covering that
+          // index, ordered by group number so an inner (higher-numbered)
+          // group layers on top of an outer one. Characters no capture
+          // covers fall back to the whole-match scope.
+          def scopesAt(i: Int): List[String] =
+            val names = covers.toList
+              .filter { case (_, rs, re, _) => i >= rs && i < re }
+              .sortBy(_._1)
+              .map(_._4)
+            if names.isEmpty then effectiveScopes
+            else baseScopes ++ patternName.toList ++ names
+
+          // Coalesce maximal runs of identical scope lists into one token,
+          // so each character is emitted exactly once.
+          var i = 0
+          while i < mlen do
+            val sc = scopesAt(i)
+            var j = i + 1
+            while j < mlen && scopesAt(j) == sc do j += 1
+            tokens += Token(matchedText.substring(i, j), sc)
+            i = j
 
       case _ =>
         // No captures — emit whole match

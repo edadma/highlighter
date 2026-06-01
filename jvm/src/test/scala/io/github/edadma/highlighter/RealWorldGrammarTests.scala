@@ -36,6 +36,18 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
 
   private def hl(name: String): Highlighter = loadGrammar(name)
 
+  /** Strip all `<span …>` / `</span>` wrappers and undo the HTML
+    * escaping the renderer applies, recovering the visible source text.
+    * Used to assert the highlighter never adds or drops characters. */
+  private def stripSpans(html: String): String =
+    html
+      .replaceAll("<span[^>]*>", "")
+      .replaceAll("</span>", "")
+      .replace("&lt;", "<")
+      .replace("&gt;", ">")
+      .replace("&quot;", "\"")
+      .replace("&amp;", "&")
+
   /** Convenience: assert that `hl` outputs an `hl-<klass>` span for the input.
     * Use sparingly — prefer checking exact substrings of the output when you
     * care about WHICH token got the class. */
@@ -56,7 +68,7 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
   "grammar loading" - {
     val all = List(
       "javascript", "typescript", "tsx", "bash", "python", "json",
-      "yaml", "html", "css", "go", "rust", "scala",
+      "yaml", "html", "css", "go", "rust", "scala", "xml",
     )
     all.foreach { lang =>
       lang in {
@@ -467,6 +479,61 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
   }
 
   // ─────────────────────────────────────────────────────────────────
+  // 12b. XML — the Atom-derived grammar has a malformed `comments`
+  //      block where stray `end` / `name` keys are nested inside a
+  //      `captures` object. A strict map decoder rejects the whole
+  //      grammar; VS Code (and now we) ignore the non-numbered entries.
+  // ─────────────────────────────────────────────────────────────────
+
+  "xml" - {
+
+    "grammar loads with no compile warnings despite malformed captures block" in {
+      val hl = loadGrammar("xml")
+      hl.loadWarnings shouldBe empty
+    }
+
+    "open tag name highlights" in {
+      hl("xml").highlight("<link>").shouldHighlight("function", "link")
+    }
+
+    "attribute name highlights" in {
+      hl("xml").highlight("""<a href="x"/>""").shouldHighlight("function", "href")
+    }
+
+    "attribute string value highlights" in {
+      hl("xml").highlight("""<a href="x"/>""").shouldHighlight("string", "x")
+    }
+
+    "comment highlights" in {
+      hl("xml").highlight("<!-- hi -->").shouldHighlight("comment")
+    }
+
+    "multi-line tag with URL attribute (the podcast-docs repro)" in {
+      val code =
+        """<link rel="enclosure"
+          |      href="https://echochamber.example/audio/ep04.mp3"/>""".stripMargin
+      val out = hl("xml").highlight(code)
+      out.shouldHighlight("function", "link")
+      out.shouldHighlight("string", "https://echochamber.example/audio/ep04.mp3")
+    }
+
+    // The namespace patterns use `((:))` — nested capture groups that
+    // both cover the same colon. The tokenizer used to emit that colon
+    // once per covering group, duplicating it in the output. Verify the
+    // visible text round-trips: stripping all the spans must give back
+    // the source verbatim, with exactly one colon.
+    "namespaced tag does not duplicate the colon" in {
+      val out = hl("xml").highlight("""<atom:link href="x"/>""")
+      stripSpans(out) shouldBe """<atom:link href="x"/>"""
+    }
+
+    "namespaced attribute does not duplicate the colon" in {
+      val out = hl("xml").highlight("""<a xmlns:atom="x"/>""")
+      stripSpans(out) shouldBe """<a xmlns:atom="x"/>"""
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
   // 13. Regex feature surface — synthetic grammars that exercise one
   //     regex feature each. Lets us pinpoint *which* feature is failing
   //     vs blaming a giant grammar.
@@ -597,6 +664,32 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
       hl.loadWarnings shouldBe empty
       hl.highlight("aaa").shouldHighlight("keyword", "aaa")
       hl.highlight("{x}").shouldHighlight("string", "{x}")
+    }
+
+    // Some real grammars (Atom's XML) misplace scalar keys like `end`
+    // and `name` *inside* a `captures` object. The strict map decoder
+    // used to reject the whole grammar; the lenient decoder skips any
+    // entry whose value isn't a capture object and keeps the rest.
+    "tolerates stray non-capture keys inside a captures object" in {
+      val grammar = """{
+        "scopeName": "source.strays",
+        "patterns": [
+          {
+            "begin": "<!--",
+            "end": "-->",
+            "name": "comment.block.strays",
+            "captures": {
+              "0": { "name": "punctuation.definition.comment.strays" },
+              "end": "-->",
+              "name": "comment.block.strays"
+            }
+          }
+        ]
+      }"""
+      val hl = Highlighter.fromJson(grammar, ClassMode("hl-"))
+        .getOrElse(fail("grammar with stray captures keys should still load"))
+      hl.loadWarnings shouldBe empty
+      hl.highlight("<!-- hi -->").shouldHighlight("comment")
     }
 
     "loadWarnings is empty when every pattern compiles" in {

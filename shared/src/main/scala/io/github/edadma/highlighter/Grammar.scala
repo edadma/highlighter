@@ -1,11 +1,26 @@
 package io.github.edadma.highlighter
 
 import zio.json.*
+import zio.json.ast.Json
 
 case class CaptureEntry(name: Option[String] = None, patterns: Option[List[Pattern]] = None)
 
 object CaptureEntry:
   given JsonDecoder[CaptureEntry] = DeriveJsonDecoder.gen[CaptureEntry]
+
+  /** Lenient decoder for a TextMate `captures` / `beginCaptures` /
+    * `endCaptures` map. Capture keys are normally capture-group numbers
+    * (`"0"`, `"1"`, …) whose values are capture descriptors. Some
+    * real-world grammars — e.g. Atom's XML grammar's `comments` block —
+    * misplace stray scalar keys like `"end"` / `"name"` *inside* a
+    * `captures` object. VS Code's tokenizer simply ignores anything that
+    * isn't a numbered capture descriptor; matching that, we skip any
+    * entry whose value isn't a capture object rather than failing the
+    * entire grammar load over one malformed sibling. */
+  given JsonDecoder[Map[String, CaptureEntry]] =
+    JsonDecoder[Map[String, Json]].map { raw =>
+      raw.flatMap { case (k, v) => v.as[CaptureEntry].toOption.map(k -> _) }
+    }
 
 case class Grammar(
     scopeName: String,

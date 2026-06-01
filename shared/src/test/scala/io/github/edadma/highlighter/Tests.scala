@@ -245,6 +245,45 @@ class Tests extends AnyFreeSpec with Matchers {
     }
   }
 
+  "nested capture groups" - {
+    // A capture group wrapping another (`((:))`) makes two groups cover
+    // the same characters — the shape XML namespace patterns use for the
+    // `:` separator. The tokenizer must emit that span ONCE (layering the
+    // inner group's scope on top), not once per covering group, which
+    // would duplicate the character in the output.
+    val nestedGrammar = """{
+      "scopeName": "source.nested",
+      "patterns": [
+        { "match": "([a-z]+)((:))([a-z]+)",
+          "captures": {
+            "1": { "name": "entity.name.tag.ns.nested" },
+            "2": { "name": "entity.name.tag.nested" },
+            "3": { "name": "punctuation.separator.nested" },
+            "4": { "name": "entity.name.tag.local.nested" }
+          }
+        }
+      ]
+    }"""
+
+    def visibleText(html: String): String =
+      html.replaceAll("<span[^>]*>", "").replaceAll("</span>", "")
+
+    "does not duplicate text covered by nested groups" in {
+      val Right(hl) = Highlighter.fromJson(nestedGrammar, ClassMode("hl-")): @unchecked
+      val out = hl.highlight("foo:bar")
+      visibleText(out) shouldBe "foo:bar" // exactly one colon, no duplication
+    }
+
+    "innermost nested group wins the scope" in {
+      val Right(hl) = Highlighter.fromJson(nestedGrammar, ClassMode("hl-")): @unchecked
+      val out = hl.highlight("foo:bar")
+      // The colon is covered by group 2 (entity → function) and the
+      // inner group 3 (punctuation); the inner, higher-numbered group
+      // layers last, so the colon renders as punctuation.
+      out should include("""<span class="hl-punctuation">:</span>""")
+    }
+  }
+
   "edge cases" - {
     "empty input" in {
       val Right(hl) = Highlighter.fromJson(simpleGrammar): @unchecked
