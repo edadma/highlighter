@@ -9,6 +9,8 @@
 
 A cross-platform Scala syntax highlighter that uses VS Code-compatible TextMate grammar JSON files to tokenize code and render highlighted HTML — or to hand you the tokens directly to render your own way.
 
+**Documentation: [highlighter.edadma.dev](https://highlighter.edadma.dev/).**
+
 ## Features
 
 - **TextMate grammar engine** — regex state machine with begin/end patterns, captures, repository includes, `$self` references, and cycle detection
