@@ -69,6 +69,24 @@ class Tests extends AnyFreeSpec with Matchers {
     }
   }
 
+  "structured tokens" - {
+    "tokens are grouped one list per source line and reproduce the line" in {
+      val Right(hl) = Highlighter.fromJson(simpleGrammar): @unchecked
+      val lines     = hl.tokens("val x = 1\n// note")
+      lines.length shouldBe 2
+      lines.head.map(_.text).mkString shouldBe "val x = 1"
+      lines(1).map(_.text).mkString shouldBe "// note"
+    }
+
+    "each token carries a category a caller can map to its own palette" in {
+      val Right(hl) = Highlighter.fromJson(simpleGrammar): @unchecked
+      val toks      = hl.tokens("val x = 42").head
+      hl.categoryOf(toks.find(_.text == "val").get) shouldBe "keyword"
+      hl.categoryOf(toks.find(_.text == "42").get) shouldBe "number"
+      hl.category("comment.line.test") shouldBe "comment"
+    }
+  }
+
   "html escaping" - {
     "escapes angle brackets" in {
       val Right(hl) = Highlighter.fromJson(simpleGrammar): @unchecked

@@ -24,6 +24,22 @@ class Highlighter(grammar: Grammar, mode: RenderMode = ClassMode()):
       }
       .mkString("\n")
 
+  /** Tokenize `code` into one list of tokens per source line, with adjacent same-scope tokens merged — the
+    * structured equivalent of [[highlight]] for callers that render the tokens themselves (a PDF or terminal
+    * back end, say) rather than HTML. The line grouping is preserved: `tokens(code).length` is the number of
+    * lines, and concatenating each line's token texts reproduces that line exactly. */
+  def tokens(code: String): List[List[Token]] =
+    tokenizer.tokenize(code).map(mergeTokens)
+
+  /** Collapse a TextMate scope to one of the rendering categories — `keyword`, `string`, `comment`, `number`,
+    * `type`, `function`, `variable`, `operator`, `punctuation` — or `""` when the scope carries no colour of its
+    * own (plain source text). The HTML back ends use this to pick a CSS class or theme colour; a token-consuming
+    * caller uses it the same way against its own palette. A token's effective scope is its last (innermost) one. */
+  def category(scope: String): String = scopeCategory(scope)
+
+  /** The rendering category of a token — [[category]] applied to the token's innermost scope. */
+  def categoryOf(token: Token): String = scopeCategory(token.scopes.lastOption.getOrElse(""))
+
   private def mergeTokens(tokens: List[Token]): List[Token] =
     tokens.foldLeft(List.empty[Token]) { (acc, tok) =>
       acc match
