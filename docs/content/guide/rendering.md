@@ -39,17 +39,20 @@ hl.highlight("val x = 42")
 // <span style="color:#c678dd">val</span> x = <span style="color:#d19a66">42</span>
 ```
 
-Dropped into a `<pre>`, that output renders as real highlighted code — no stylesheet involved:
+This very page is built that way: the plain fenced ` ```scala ` blocks here are highlighted at
+build time by the same library, through the site generator's `codeHighlighter` hook:
 
-<pre style="background:#282c34;color:#abb2bf;padding:1rem 1.25rem;border-radius:8px;overflow-x:auto;font-size:.8rem;line-height:1.55;margin:1rem 0"><code><span style="color:#5c6370">// quicksort</span>
-<span style="color:#c678dd">def</span> sort<span style="color:#abb2bf">(</span>xs<span style="color:#abb2bf">:</span> <span style="color:#e5c07b">List</span><span style="color:#abb2bf">[</span><span style="color:#e5c07b">Int</span><span style="color:#abb2bf">]):</span> <span style="color:#e5c07b">List</span><span style="color:#abb2bf">[</span><span style="color:#e5c07b">Int</span><span style="color:#abb2bf">]</span> <span style="color:#c678dd">=</span> xs <span style="color:#c678dd">match</span>
-  <span style="color:#c678dd">case</span> <span style="color:#e5c07b">Nil</span> <span style="color:#c678dd">=&gt;</span> <span style="color:#e5c07b">Nil</span>
-  <span style="color:#c678dd">case</span> pivot <span style="color:#c678dd">::</span> rest <span style="color:#c678dd">=&gt;</span>
-    <span style="color:#c678dd">val</span> <span style="color:#abb2bf">(</span>less<span style="color:#abb2bf">,</span> more<span style="color:#abb2bf">)</span> <span style="color:#c678dd">=</span> rest<span style="color:#abb2bf">.</span>partition<span style="color:#abb2bf">(</span>_ <span style="color:#c678dd">&lt;</span> pivot<span style="color:#abb2bf">)</span>
-    sort<span style="color:#abb2bf">(</span>less<span style="color:#abb2bf">)</span> <span style="color:#c678dd">++</span> <span style="color:#abb2bf">(</span>pivot <span style="color:#c678dd">::</span> sort<span style="color:#abb2bf">(</span>more<span style="color:#abb2bf">))</span>
+```scala
+// quicksort
+def sort(xs: List[Int]): List[Int] = xs match
+  case Nil => Nil
+  case pivot :: rest =>
+    val (less, more) = rest.partition(_ < pivot)
+    sort(less) ++ (pivot :: sort(more))
 
-<span style="color:#c678dd">val</span> nums <span style="color:#c678dd">=</span> <span style="color:#e5c07b">List</span><span style="color:#abb2bf">(</span><span style="color:#d19a66">5</span><span style="color:#abb2bf">,</span> <span style="color:#d19a66">2</span><span style="color:#abb2bf">,</span> <span style="color:#d19a66">8</span><span style="color:#abb2bf">,</span> <span style="color:#d19a66">1</span><span style="color:#abb2bf">,</span> <span style="color:#d19a66">9</span><span style="color:#abb2bf">)</span>
-println<span style="color:#abb2bf">(</span>sort<span style="color:#abb2bf">(</span>nums<span style="color:#abb2bf">))</span>  <span style="color:#5c6370">// List(1, 2, 5, 8, 9)</span></code></pre>
+val nums = List(5, 2, 8, 1, 9)
+println(sort(nums))  // List(1, 2, 5, 8, 9)
+```
 
 See [Themes](/guide/themes/) for the built-in schemes and how to define your own.
 
