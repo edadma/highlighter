@@ -61,6 +61,10 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     ),
     publishMavenStyle      := true,
     Test / publishArtifact := false,
+    // Scaladoc on the Scala.js / Scala Native back ends is handed the platform's compiler-plugin flag, which the
+    // doc tool does not accept ("Setting -Xplugin is currently not supported"). The plugin is only needed to
+    // compile, not to build docs from TASTy, so drop it from the doc invocation to keep the doc build clean.
+    Compile / doc / scalacOptions ~= { _.filterNot(_.startsWith("-Xplugin")) },
   )
   .jvmSettings(
     libraryDependencies += "org.scala-js" %% "scalajs-stubs" % "1.1.0" % "provided",
