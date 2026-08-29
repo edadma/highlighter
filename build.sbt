@@ -7,7 +7,7 @@ ThisBuild / scalaVersion           := "3.8.4"
 ThisBuild / organization           := "io.github.edadma"
 ThisBuild / organizationName       := "edadma"
 ThisBuild / organizationHomepage   := Some(url("https://github.com/edadma"))
-ThisBuild / version                := "0.0.11"
+ThisBuild / version                := "0.0.12"
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 
 ThisBuild / publishConfiguration := publishConfiguration.value.withOverwrite(true).withChecksums(Vector.empty)
@@ -57,7 +57,7 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 //    ),
     libraryDependencies ++= Seq(
       "dev.zio"          %%% "zio-json"   % "0.7.42",
-      "io.github.edadma" %%% "oniguruma"  % "0.0.5",
+      "io.github.edadma" %%% "oniguruma"  % "0.0.6",
     ),
     publishMavenStyle      := true,
     Test / publishArtifact := false,
