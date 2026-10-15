@@ -1,0 +1,23 @@
+/* Layout and theme */
+@import url("reset.css");
+
+:root {
+  --accent: #ff0000;
+  --gap: 1.5rem;
+}
+
+html, body { margin: 0; padding: 0; }
+
+.card > .title:hover,
+#main a[href^="https"]::after {
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.5) url('bg.png') no-repeat;
+  font: italic bold 12px/30px Georgia, serif;
+  transition: transform 200ms ease-in-out !important;
+}
+
+@media (min-width: 600px) and (prefers-color-scheme: dark) {
+  .card { display: grid; grid-template-columns: repeat(3, 1fr); }
+}
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

@@ -1,0 +1,39 @@
+"""A module docstring."""
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+from typing import Optional
+
+PI = 3.14159
+MASK = 0xFF & ~0b1010
+
+
+@dataclass(frozen=True)
+class Point:
+    x: float = 0.0
+    y: float = 0.0
+    tags: list[str] = field(default_factory=list)
+
+    def norm(self) -> float:
+        return (self.x ** 2 + self.y ** 2) ** 0.5
+
+
+async def fetch(url: str, *, retries: int = 3) -> Optional[bytes]:
+    for attempt in range(retries):
+        try:
+            async with session.get(url) as r:
+                return await r.read()
+        except (TimeoutError, OSError) as e:
+            print(f"attempt {attempt}: {e!r}", file=sys.stderr)
+    return None
+
+
+def café(naïve: str) -> str:
+    s = 'single' + "double" + r"raw\d+" + b"bytes".decode()
+    return s if naïve else None
+
+
+squares = [n * n for n in range(10) if n % 2 == 0]
+lam = lambda a, b=2: a and not b or True
+x = "a" if y else 'b'

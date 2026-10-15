@@ -1,0 +1,6 @@
+// hello
+fn main() {}
+let x = 1;
+struct Foo {}
+let s = "hi";
+println!("hi");

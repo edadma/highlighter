@@ -1,0 +1,5 @@
+/* hello */
+.foo { color: red }
+.x { color: red }
+.x { color: #ff0000 }
+@media (min-width: 600px) {}

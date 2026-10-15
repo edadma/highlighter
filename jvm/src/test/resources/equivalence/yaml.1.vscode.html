@@ -1,0 +1,25 @@
+<span class="hl-comment">#</span><span class="hl-comment"> A CI workflow.</span>
+<span class="hl-function">name</span><span class="hl-punctuation">:</span> <span class="hl-string">build</span>
+<span class="hl-variable">on</span><span class="hl-punctuation">:</span>
+  <span class="hl-function">push</span><span class="hl-punctuation">:</span>
+    <span class="hl-function">branches</span><span class="hl-punctuation">:</span> <span class="hl-punctuation">[</span><span class="hl-string">dev</span><span class="hl-punctuation">,</span> <span class="hl-string">main</span><span class="hl-punctuation">]</span>
+<span class="hl-function">env</span><span class="hl-punctuation">:</span>
+  <span class="hl-function">RETRIES</span><span class="hl-punctuation">:</span> <span class="hl-number">3</span>
+  <span class="hl-function">RATIO</span><span class="hl-punctuation">:</span> <span class="hl-number">-0.5</span>
+  <span class="hl-function">ENABLED</span><span class="hl-punctuation">:</span> <span class="hl-variable">yes</span>
+  <span class="hl-function">DATE</span><span class="hl-punctuation">:</span> <span class="hl-string">2024-03-12</span>
+<span class="hl-function">defaults</span><span class="hl-punctuation">:</span> <span class="hl-keyword">&amp;</span><span class="hl-type">defaults</span>
+  <span class="hl-function">runs-on</span><span class="hl-punctuation">:</span> <span class="hl-string">ubuntu-latest</span>
+  <span class="hl-function">timeout-minutes</span><span class="hl-punctuation">:</span> <span class="hl-number">10</span>
+<span class="hl-function">jobs</span><span class="hl-punctuation">:</span>
+  <span class="hl-function">test</span><span class="hl-punctuation">:</span>
+    <span class="hl-keyword">&lt;&lt;</span><span class="hl-punctuation">:</span> <span class="hl-keyword">*</span><span class="hl-variable">defaults</span>
+    <span class="hl-function">steps</span><span class="hl-punctuation">:</span>
+      <span class="hl-punctuation">-</span> <span class="hl-function">uses</span><span class="hl-punctuation">:</span> <span class="hl-string">actions/checkout@v4</span>
+      <span class="hl-punctuation">-</span> <span class="hl-function">name</span><span class="hl-punctuation">:</span> <span class="hl-string">&quot;</span><span class="hl-string">Run tests</span><span class="hl-string">&quot;</span>
+        <span class="hl-function">run</span><span class="hl-punctuation">:</span> <span class="hl-keyword">|</span>
+<span class="hl-string">          make test</span>
+<span class="hl-string">          echo done</span>
+      <span class="hl-punctuation">-</span> <span class="hl-function">name</span><span class="hl-punctuation">:</span> <span class="hl-string">'</span><span class="hl-string">single</span><span class="hl-string">'</span>
+        <span class="hl-function">with</span><span class="hl-punctuation">:</span> <span class="hl-punctuation">{</span> <span class="hl-function">cache</span><span class="hl-punctuation">:</span> <span class="hl-variable">true</span><span class="hl-punctuation">,</span> <span class="hl-function">key</span><span class="hl-punctuation">:</span> <span class="hl-variable">~</span> <span class="hl-punctuation">}</span>
+      <span class="hl-punctuation">-</span> <span class="hl-keyword">!!str</span> <span class="hl-number">42</span>

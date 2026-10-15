@@ -1,0 +1,6 @@
+# hello
+x="hello"
+x='hello'
+echo "$HOME"
+if true; then echo y; fi
+for i in 1 2 3; do echo $i; done

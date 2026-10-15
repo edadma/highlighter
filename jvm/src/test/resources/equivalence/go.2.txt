@@ -1,0 +1,5 @@
+// hello
+package main
+func main() {}
+x := "hello"
+type Foo struct {}

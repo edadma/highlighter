@@ -1,0 +1,25 @@
+import React, { useState } from "react";
+
+type Props = { title: string; items: string[] };
+
+export function List({ title, items }: Props) {
+  const [open, setOpen] = useState<boolean>(false);
+
+  return (
+    <section className="list" data-open={open}>
+      <h2 onClick={() => setOpen(!open)}>{title} &amp; more</h2>
+      {open && (
+        <ul>
+          {items.map((it, i) => (
+            <li key={i} style={{ color: i % 2 ? "red" : "blue" }}>
+              {it}
+            </li>
+          ))}
+        </ul>
+      )}
+      <input type="text" disabled />
+    </section>
+  );
+}
+
+export default List;

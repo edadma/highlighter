@@ -1,0 +1,26 @@
+package example
+
+import scala.collection.mutable
+
+// A line comment.
+/* A block
+   comment. */
+object Main:
+  val answer = 42
+  var ratio = 3.5
+  private val síif = "naïve"
+
+  case class Point(x: Int, y: Int):
+    def +(o: Point): Point = Point(x + o.x, y + o.y)
+
+  def greet(name: String = "world"): String =
+    if name.isEmpty then "nobody" else s"Hello, $name!"
+
+  def main(args: Array[String]): Unit =
+    val xs = List(1, 2, 3).map(_ * 2)
+    for x <- xs do println(x)
+    while ratio < 10 do ratio *= 2
+    xs match
+      case head :: _ => println(head)
+      case Nil       => ()
+    val realíssimo = true

@@ -1,0 +1,6 @@
+// hello
+def f = 1
+val x = 1
+if (x) 1 else 2
+val s = "hi"
+val x = 42

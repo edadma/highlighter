@@ -1,0 +1,26 @@
+<span class="hl-keyword">package</span> example
+
+<span class="hl-keyword">import</span> scala<span class="hl-punctuation">.</span>collection<span class="hl-punctuation">.</span>mutable
+
+<span class="hl-comment">// A line comment.</span>
+<span class="hl-comment">/* A block</span>
+<span class="hl-comment">   comment. */</span>
+<span class="hl-keyword">object</span> <span class="hl-type">Main</span><span class="hl-punctuation">:</span>
+  <span class="hl-keyword">val</span> answer <span class="hl-keyword">=</span> <span class="hl-number">42</span>
+  <span class="hl-keyword">var</span> ratio <span class="hl-keyword">=</span> <span class="hl-number">3.5</span>
+  <span class="hl-keyword">private</span> <span class="hl-keyword">val</span> síif <span class="hl-keyword">=</span> <span class="hl-string">&quot;naïve&quot;</span>
+
+  <span class="hl-keyword">case</span> <span class="hl-keyword">class</span> <span class="hl-type">Point</span><span class="hl-punctuation">(</span>x<span class="hl-punctuation">:</span> <span class="hl-type">Int</span><span class="hl-punctuation">,</span> y<span class="hl-punctuation">:</span> <span class="hl-type">Int</span><span class="hl-punctuation">):</span>
+    <span class="hl-keyword">def</span> <span class="hl-keyword">+</span><span class="hl-punctuation">(</span>o<span class="hl-punctuation">:</span> <span class="hl-type">Point</span><span class="hl-punctuation">):</span> <span class="hl-type">Point</span> <span class="hl-keyword">=</span> <span class="hl-type">Point</span><span class="hl-punctuation">(</span>x <span class="hl-keyword">+</span> o<span class="hl-punctuation">.</span>x<span class="hl-punctuation">,</span> y <span class="hl-keyword">+</span> o<span class="hl-punctuation">.</span>y<span class="hl-punctuation">)</span>
+
+  <span class="hl-keyword">def</span> greet<span class="hl-punctuation">(</span>name<span class="hl-punctuation">:</span> <span class="hl-type">String</span> <span class="hl-keyword">=</span> <span class="hl-string">&quot;world&quot;</span><span class="hl-punctuation">):</span> <span class="hl-type">String</span> <span class="hl-keyword">=</span>
+    <span class="hl-keyword">if</span> name<span class="hl-punctuation">.</span>isEmpty <span class="hl-keyword">then</span> <span class="hl-string">&quot;nobody&quot;</span> <span class="hl-keyword">else</span> s<span class="hl-string">&quot;Hello, $name!&quot;</span>
+
+  <span class="hl-keyword">def</span> main<span class="hl-punctuation">(</span>args<span class="hl-punctuation">:</span> <span class="hl-type">Array</span><span class="hl-punctuation">[</span><span class="hl-type">String</span><span class="hl-punctuation">]):</span> <span class="hl-type">Unit</span> <span class="hl-keyword">=</span>
+    <span class="hl-keyword">val</span> xs <span class="hl-keyword">=</span> <span class="hl-type">List</span><span class="hl-punctuation">(</span><span class="hl-number">1</span><span class="hl-punctuation">,</span> <span class="hl-number">2</span><span class="hl-punctuation">,</span> <span class="hl-number">3</span><span class="hl-punctuation">).</span>map<span class="hl-punctuation">(</span>_ <span class="hl-keyword">*</span> <span class="hl-number">2</span><span class="hl-punctuation">)</span>
+    <span class="hl-keyword">for</span> x <span class="hl-keyword">&lt;-</span> xs <span class="hl-keyword">do</span> println<span class="hl-punctuation">(</span>x<span class="hl-punctuation">)</span>
+    <span class="hl-keyword">while</span> ratio <span class="hl-keyword">&lt;</span> <span class="hl-number">10</span> <span class="hl-keyword">do</span> ratio <span class="hl-keyword">*=</span> <span class="hl-number">2</span>
+    xs <span class="hl-keyword">match</span>
+      <span class="hl-keyword">case</span> head <span class="hl-keyword">::</span> _ <span class="hl-keyword">=&gt;</span> println<span class="hl-punctuation">(</span>head<span class="hl-punctuation">)</span>
+      <span class="hl-keyword">case</span> <span class="hl-type">Nil</span>       <span class="hl-keyword">=&gt;</span> <span class="hl-punctuation">()</span>
+    <span class="hl-keyword">val</span> realíssimo <span class="hl-keyword">=</span> <span class="hl-variable">true</span>

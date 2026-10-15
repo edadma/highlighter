@@ -1,0 +1,33 @@
+// Types, generics, enums, decorators.
+import type { Request, Response } from "express";
+
+export interface User<T extends object = {}> {
+  readonly id: number;
+  name?: string;
+  meta: Record<string, T>;
+}
+
+type Handler = (req: Request, res: Response) => Promise<void>;
+enum Color { Red = "RED", Green = "GREEN", Blue = 3 }
+
+@Component({ selector: "app-root" })
+export class Store<K, V> implements Iterable<[K, V]> {
+  private items = new Map<K, V>();
+  public constructor(private readonly limit: number = 100) {}
+
+  get(key: K): V | undefined {
+    return this.items.get(key) as V | undefined;
+  }
+
+  *[Symbol.iterator](): Iterator<[K, V]> {
+    yield* this.items.entries();
+  }
+}
+
+function assertNever(x: never): never {
+  throw new Error(`unexpected: ${x}`);
+}
+
+const ok: boolean = true, n = 42 satisfies number;
+let résumé: string | null = null;
+namespace Util { export const twice = <T,>(f: (x: T) => T) => (x: T) => f(f(x)); }

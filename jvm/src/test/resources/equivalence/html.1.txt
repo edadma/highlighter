@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Highlighter &mdash; demo</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { margin: 0; color: #333; }
+  </style>
+</head>
+<body class="page">
+  <!-- a comment -->
+  <h1 id="top">Hello &amp; welcome</h1>
+  <p>Some <em>text</em> and a <a href="https://example.com/?a=1&b=2" target="_blank">link</a>.</p>
+  <img src="logo.png" alt="logo" />
+  <form action="/send" method="post">
+    <input type="text" name="q" required>
+    <button disabled>Go</button>
+  </form>
+  <script>
+    const x = 1; console.log("hi", x);
+  </script>
+</body>
+</html>

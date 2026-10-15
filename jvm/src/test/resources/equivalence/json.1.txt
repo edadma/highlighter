@@ -1,0 +1,13 @@
+{
+  "name": "highlighter",
+  "version": "0.1.0",
+  "private": false,
+  "count": -12.5e3,
+  "nothing": null,
+  "tags": ["syntax", "textmate", "oniguruma"],
+  "nested": {
+    "escaped": "a \"quoted\" \\ word é",
+    "unicode": "naïve 日本語",
+    "list": [1, 2, 3, {"deep": true}]
+  }
+}

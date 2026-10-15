@@ -1,0 +1,7 @@
+// hello
+import x from "y"
+interface Foo {}
+type T = string
+const x: string = 'a'
+function f<T>(x: T): T { return x }
+enum Color { Red, Green }

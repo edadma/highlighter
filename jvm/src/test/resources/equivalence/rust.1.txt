@@ -1,0 +1,38 @@
+//! Crate docs.
+use std::collections::HashMap;
+use std::fmt::{self, Display};
+
+/// A point.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Point<T> {
+    pub x: T,
+    pub y: T,
+}
+
+impl<T: Display> Display for Point<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+pub enum Shape { Circle(f64), Rect { w: f64, h: f64 } }
+
+fn area(s: &Shape) -> f64 {
+    match s {
+        Shape::Circle(r) => std::f64::consts::PI * r * r,
+        Shape::Rect { w, h } => w * h,
+    }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut counts: HashMap<&str, usize> = HashMap::new();
+    for word in "a b a".split_whitespace() {
+        *counts.entry(word).or_insert(0) += 1;
+    }
+    let raw = r#"raw "string""#;
+    let byte = b'x';
+    let café = 0xFF_u8 as i32 + 1_000;
+    println!("{:?} {} {}", counts, raw, byte);
+    if let Some(v) = counts.get("a") { return Ok(()); }
+    loop { break; }
+}

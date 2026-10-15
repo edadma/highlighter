@@ -1,0 +1,5 @@
+<!DOCTYPE html>
+<!-- hi -->
+<div>
+<a href="x"></a>
+<img src="x" />

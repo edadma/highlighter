@@ -3,7 +3,11 @@ package io.github.edadma.highlighter
 import zio.json.*
 import zio.json.ast.Json
 
-case class CaptureEntry(name: Option[String] = None, patterns: Option[List[Pattern]] = None)
+case class CaptureEntry(
+    name: Option[String] = None,
+    contentName: Option[String] = None,
+    patterns: Option[List[Pattern]] = None,
+)
 
 object CaptureEntry:
   given JsonDecoder[CaptureEntry] = DeriveJsonDecoder.gen[CaptureEntry]
@@ -44,6 +48,7 @@ case class RepositoryEntry(
     patterns: Option[List[Pattern]] = None,
     include: Option[String] = None,
     contentName: Option[String] = None,
+    applyEndPatternLast: Option[Json] = None,
 )
 
 object RepositoryEntry:
@@ -61,6 +66,7 @@ object RepositoryEntry:
       patterns = entry.patterns,
       include = entry.include,
       contentName = entry.contentName,
+      applyEndPatternLast = entry.applyEndPatternLast,
     )
 
 case class Pattern(
@@ -74,7 +80,13 @@ case class Pattern(
     patterns: Option[List[Pattern]] = None,
     include: Option[String] = None,
     contentName: Option[String] = None,
-)
+    // `1` or `true` in a grammar: the `end` loses a tie with an inner rule instead of winning it.
+    applyEndPatternLast: Option[Json] = None,
+):
+  def endLast: Boolean = applyEndPatternLast match
+    case Some(Json.Num(n))  => n.doubleValue != 0
+    case Some(Json.Bool(b)) => b
+    case _                  => false
 
 object Pattern:
   given JsonDecoder[Pattern] = DeriveJsonDecoder.gen[Pattern]

@@ -1,0 +1,15 @@
+// hello
+/* hello */
+import x from "y"
+"hello"
+'hello'
+`hi ${x}`
+const x = 1
+let x = 1
+var x = 1
+const x = 42
+const a = true; const b = false; const c = null;
+function f() {}
+const f = () => 1
+const r = /^foo$/g
+class Foo {}

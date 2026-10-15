@@ -1,0 +1,25 @@
+# A CI workflow.
+name: build
+on:
+  push:
+    branches: [dev, main]
+env:
+  RETRIES: 3
+  RATIO: -0.5
+  ENABLED: yes
+  DATE: 2024-03-12
+defaults: &defaults
+  runs-on: ubuntu-latest
+  timeout-minutes: 10
+jobs:
+  test:
+    <<: *defaults
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Run tests"
+        run: |
+          make test
+          echo done
+      - name: 'single'
+        with: { cache: true, key: ~ }
+      - !!str 42

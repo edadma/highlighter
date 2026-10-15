@@ -1,0 +1,10 @@
+# hello
+def f():
+    pass
+class C: pass
+x = "hello"
+x = f"hello {name}"
+x = 42
+x = True
+import os
+@decorator

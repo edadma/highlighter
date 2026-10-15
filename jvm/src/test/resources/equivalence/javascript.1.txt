@@ -1,0 +1,39 @@
+// A small module: imports, classes, async, templates and regexes.
+import { readFile } from "node:fs/promises";
+import * as path from 'node:path';
+
+/* Block comment
+   across lines */
+const MAX = 0x1F, RATIO = 3.5e-2, BIG = 10_000n;
+let café = "naïve", 名前 = '日本語';
+
+export class Greeter extends Base {
+  #count = 0;
+  static default = new Greeter("world");
+
+  constructor(name = "anon") {
+    super();
+    this.name = name;
+  }
+
+  greet(times) {
+    for (let i = 0; i < times; i++) {
+      this.#count += 1;
+      console.log(`Hello, ${this.name}! (${i + 1}/${times})`);
+    }
+    return this.#count >= MAX ? null : undefined;
+  }
+}
+
+async function load(file) {
+  try {
+    const text = await readFile(path.join(__dirname, file), "utf8");
+    return text.split(/\r?\n/g).filter(l => !/^\s*#/.test(l));
+  } catch (err) {
+    throw new Error(`cannot read ${file}: ${err.message}`);
+  }
+}
+
+const sum = (...xs) => xs.reduce((a, b) => a + b, 0);
+if (typeof window !== "undefined" && sum(1, 2) === 3) { delete obj.key; }
+switch (x) { case 1: break; default: void 0; }

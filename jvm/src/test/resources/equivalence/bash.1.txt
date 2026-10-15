@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Build and test, with a few of the usual shell shapes.
+set -euo pipefail
+
+readonly ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+declare -a targets=(one two "three four")
+count=0
+
+log() {
+  local level="$1"; shift
+  printf '[%s] %s\n' "$level" "$*" >&2
+}
+
+for t in "${targets[@]}"; do
+  if [[ -f "$ROOT/$t.conf" && $count -lt 10 ]]; then
+    count=$((count + 1))
+    log info "building $t ($count)"
+  elif [ -d "$t" ]; then
+    echo "dir: $t" | tee -a build.log
+  else
+    log warn "skipping ${t:-unknown}"
+  fi
+done
+
+case "${1:-all}" in
+  test|check) make test 2>/dev/null || exit 1 ;;
+  *) echo "usage: $0 [test]" ;;
+esac
+
+while read -r line; do echo "$line"; done < input.txt
+
+cat <<EOF
+Hello, $USER
+EOF
+echo after

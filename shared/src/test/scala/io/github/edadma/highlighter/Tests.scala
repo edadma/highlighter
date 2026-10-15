@@ -486,4 +486,379 @@ class Tests extends AnyFreeSpec with Matchers {
       result should include("hl-string")
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Ported from the sysl highlighter's own suite. Each name is the sysl test's name.
+  // ─────────────────────────────────────────────────────────────────
+
+  private def classHl(json: String): Highlighter =
+    Highlighter.fromJson(json, ClassMode("hl-")) match
+      case Right(h)  => h
+      case Left(err) => fail(s"the grammar should load: $err")
+
+  private def scopesOfToken(h: Highlighter, code: String, text: String): String =
+    h.tokens(code).flatten.find(_.text == text).getOrElse(fail(s"no token reads '$text'")).scopes.mkString(" ")
+
+  private val keywordGrammar = """{
+    "scopeName": "source.kw",
+    "patterns": [
+      { "match": "\\b(if|else|real)\\b", "name": "keyword.control.kw" },
+      { "match": "\\w+", "name": "variable.other.kw" }
+    ]
+  }"""
+
+  // The oniguruma engine reads `\w` as ASCII (Ruby's rule) where vscode-oniguruma reads it as Unicode, so `\w+` stops
+  // at an accented letter and a keyword rule finds a boundary inside a word. The fix is the engine's option, not this
+  // library's; these are ignored until `oniguruma` offers it.
+  "\\b is Unicode: a keyword inside a word is not a keyword" - {
+    "\\b: 'if' at the end of 'síif' is not a keyword" ignore {
+      val out = classHl(keywordGrammar).highlight("síif")
+      out should not include "hl-keyword"
+      out shouldBe """<span class="hl-variable">síif</span>"""
+    }
+
+    "\\b: 'real' at the start of 'realíssimo' is not a keyword" ignore {
+      val out = classHl(keywordGrammar).highlight("realíssimo")
+      out should not include "hl-keyword"
+      out shouldBe """<span class="hl-variable">realíssimo</span>"""
+    }
+
+    "\\b: a keyword standing alone beside a non-ASCII word still is one" ignore {
+      classHl(keywordGrammar).highlight("if síif") shouldBe
+        """<span class="hl-keyword">if</span> <span class="hl-variable">síif</span>"""
+    }
+
+    "\\w is Unicode, as in VS Code: one \\w+ takes 'naïve' whole" ignore {
+      classHl(keywordGrammar).highlight("naïve") shouldBe """<span class="hl-variable">naïve</span>"""
+    }
+  }
+
+  "an end naming its begin's groups" - {
+    val heredoc = """{
+      "scopeName": "source.doc",
+      "patterns": [
+        { "begin": "<<(\\w+)", "end": "^\\1$", "name": "string.unquoted.heredoc.doc",
+          "beginCaptures": { "1": { "name": "keyword.control.heredoc-token.doc" } },
+          "endCaptures": { "0": { "name": "keyword.control.heredoc-token.doc" } } },
+        { "match": "\\b(echo)\\b", "name": "support.function.doc" }
+      ]
+    }"""
+
+    "an end naming its begin's group closes on that group's text" in {
+      val out = classHl(heredoc).highlight("cat <<EOF\necho inside\nEOF\necho after")
+      out should include("""<span class="hl-string">echo inside</span>""")
+      out should include("""<span class="hl-function">echo</span> after""")
+    }
+
+    "an end naming its begin's group does not close on other text" in {
+      val out = classHl(heredoc).highlight("cat <<EOF\nEND\necho still")
+      out should include("""<span class="hl-string">echo still</span>""")
+    }
+
+    "two pairs open at once each close on their own text" in {
+      val h = classHl(heredoc)
+      h.highlight("<<A\nB\nA\necho x") should include("""<span class="hl-function">echo</span>""")
+      h.highlight("<<B\nA\nB\necho x") should include("""<span class="hl-function">echo</span>""")
+    }
+
+    "a begin group's text is escaped before it stands in an end" in {
+      val g = """{
+        "scopeName": "source.esc",
+        "patterns": [
+          { "begin": "\\[(\\S+)\\[", "end": "\\]\\1\\]", "name": "string.quoted.esc" }
+        ]
+      }"""
+      // `a.b` must close on `a.b` and not on `axb`, which an unescaped `.` would take.
+      classHl(g).highlight("[a.b[ x ]axb] y ]a.b] z") shouldBe
+        """<span class="hl-string">[a.b[ x ]axb] y ]a.b]</span> z"""
+    }
+
+    "a group that took no part stands in an end as nothing" in {
+      val g = """{
+        "scopeName": "source.opt",
+        "patterns": [
+          { "begin": "<(x)?", "end": ">\\1", "name": "string.quoted.opt" }
+        ]
+      }"""
+      classHl(g).highlight("<a> b") shouldBe """<span class="hl-string">&lt;a&gt;</span> b"""
+    }
+  }
+
+  "character boundaries" - {
+    "a rule that matches nothing where the line stands ends the line's matching, as in VS Code" in {
+      val g = """{
+        "scopeName": "source.zw",
+        "patterns": [ { "match": "(?=é)", "name": "meta.zw" }, { "match": "é", "name": "keyword.zw" } ]
+      }"""
+      val h = classHl(g)
+      h.highlight("aéé") shouldBe "aéé"
+      h.highlight("é\né") shouldBe "é\né"
+      h.tokens("aéé").head.length shouldBe 1
+      h.tokens("aéé").head.head.text shouldBe "aéé"
+    }
+
+    "a zero-length match at the end of a line ends the line" in {
+      val g = """{
+        "scopeName": "source.eol",
+        "patterns": [ { "match": "$", "name": "meta.eol" } ]
+      }"""
+      classHl(g).highlight("abc\ndef") shouldBe "abc\ndef"
+    }
+  }
+
+  "what does not load" - {
+    "text that is not JSON is refused, with the reader's diagnostic" in {
+      Highlighter.fromJson("{ \"scopeName\": ").isLeft shouldBe true
+    }
+
+    "a grammar with no scopeName is refused" in {
+      val r = Highlighter.fromJson("{ \"patterns\": [] }")
+      r.isLeft shouldBe true
+      r.left.getOrElse("") should include("scopeName")
+    }
+
+    "a rule key holding the wrong kind of value is refused, naming it" in {
+      val r = Highlighter.fromJson("{ \"scopeName\": \"s\", \"patterns\": [ { \"match\": 3 } ] }")
+      r.isLeft shouldBe true
+      r.left.getOrElse("") should include("match")
+    }
+
+    "a JSON value that is not an object is refused" in {
+      Highlighter.fromJson("[]").isLeft shouldBe true
+    }
+
+    "an include of a repository entry that does not exist resolves to nothing" in {
+      classHl("{ \"scopeName\": \"s\", \"patterns\": [ { \"include\": \"#nowhere\" } ] }").highlight("x") shouldBe "x"
+    }
+  }
+
+  "the renderer" - {
+    "inline rendering writes the theme's colour for each category" in {
+      val g = "{ \"scopeName\": \"s\", \"patterns\": [ { \"match\": \"\\\\d+\", \"name\": \"constant.numeric.s\" } ] }"
+      val Right(h) = Highlighter.fromJson(g, InlineMode(Theme.Monokai)): @unchecked
+      h.highlight("a 42") shouldBe """a <span style="color:#ae81ff">42</span>"""
+    }
+
+    "category: every row of the table" in {
+      val h = classHl(simpleGrammar)
+      h.category("keyword.control.x") shouldBe "keyword"
+      h.category("storage.type.x") shouldBe "keyword"
+      h.category("string.quoted.x") shouldBe "string"
+      h.category("comment.line.x") shouldBe "comment"
+      h.category("constant.numeric.x") shouldBe "number"
+      h.category("constant.language.x") shouldBe "variable"
+      h.category("entity.name.type.x") shouldBe "type"
+      h.category("entity.name.function.x") shouldBe "function"
+      h.category("entity.other.attribute-name.x") shouldBe "function"
+      h.category("variable.other.x") shouldBe "variable"
+      h.category("support.type.x") shouldBe "type"
+      h.category("support.function.x") shouldBe "function"
+      h.category("support.other.x") shouldBe ""
+      h.category("punctuation.x") shouldBe "punctuation"
+      h.category("meta.block.x") shouldBe ""
+      h.category("source.x") shouldBe ""
+      h.category("") shouldBe ""
+    }
+
+    "escape_html escapes the four and nothing else" in {
+      val h = classHl("""{ "scopeName": "source.none", "patterns": [] }""")
+      h.highlight("a<b>&\"c'") shouldBe "a&lt;b&gt;&amp;&quot;c'"
+      h.highlight("plain") shouldBe "plain"
+    }
+  }
+
+  "a line is matched with its newline" - {
+    "newline: a rule ending on \\n closes at the end of its line" in {
+      val g = """{
+        "scopeName": "source.nl",
+        "patterns": [
+          { "begin": "#", "end": "\\n", "name": "comment.line.nl" },
+          { "match": "\\bkey\\b", "name": "keyword.nl" }
+        ]
+      }"""
+      classHl(g).highlight("# note\nkey") shouldBe
+        """<span class="hl-comment"># note</span>""" + "\n" + """<span class="hl-keyword">key</span>"""
+    }
+  }
+
+  "\\G holds where the last begin ended" - {
+    val anchored = """{
+      "scopeName": "source.g",
+      "patterns": [
+        { "begin": "<", "end": "(?!\\G)", "name": "meta.tag.g",
+          "patterns": [ { "match": "\\G\\w+", "name": "keyword.g" } ] },
+        { "match": "\\G\\w+", "name": "string.g" }
+      ]
+    }"""
+
+    "\\G: holds where the begin match ended" in {
+      classHl(anchored).highlight("<ab cd") shouldBe """&lt;<span class="hl-keyword">ab</span> cd"""
+    }
+
+    "\\G: holds nowhere at the start of a line" in {
+      classHl(anchored).highlight("ab\ncd") shouldBe "ab\ncd"
+    }
+
+    "\\G: a begin match running to the end of its line makes it hold at each later line's start" in {
+      val g = """{
+        "scopeName": "source.eol",
+        "patterns": [
+          { "begin": "=\\n", "end": "^;", "name": "meta.block.eol",
+            "patterns": [ { "match": "\\G\\w+", "name": "keyword.eol" } ] }
+        ]
+      }"""
+      classHl(g).highlight("=\nab cd\nef\n;") shouldBe
+        "=\n" + """<span class="hl-keyword">ab</span>""" + " cd\n" + """<span class="hl-keyword">ef</span>""" + "\n;"
+    }
+  }
+
+  "\\A holds at the document's start and nowhere else" - {
+    val shebang =
+      """{ "scopeName": "source.sa", "patterns": [ { "match": "\\A#!.*", "name": "comment.line.shebang.sa" } ] }"""
+
+    "\\A: holds at the start of the document" in {
+      classHl(shebang).highlight("#!x\n#!y") shouldBe """<span class="hl-comment">#!x</span>""" + "\n#!y"
+    }
+
+    "\\A: holds at no other line's start" in {
+      classHl(shebang).highlight("x\n#!y") shouldBe "x\n#!y"
+    }
+  }
+
+  "a name may hold several scopes, and $N" - {
+    "names: $N stands for the group's text" in {
+      val g = """{
+        "scopeName": "source.n",
+        "patterns": [ { "match": "(\\w+)!", "name": "keyword.$1.n" }, { "match": "@(\\w+)", "name": "entity.${1:/upcase}.n" } ]
+      }"""
+      val h = classHl(g)
+      scopesOfToken(h, "go!", "go!") shouldBe "source.n keyword.go.n"
+      scopesOfToken(h, "@ab", "@ab") shouldBe "source.n entity.AB.n"
+    }
+  }
+
+  "captures" - {
+    "captures: a begin/end rule's captures apply to its end as well" in {
+      val g = """{
+        "scopeName": "source.c",
+        "patterns": [ { "begin": "<", "end": ">", "captures": { "0": { "name": "punctuation.c" } } } ]
+      }"""
+      classHl(g).highlight("<a>") shouldBe
+        """<span class="hl-punctuation">&lt;</span>a<span class="hl-punctuation">&gt;</span>"""
+    }
+
+    "captures: a capture's patterns tokenize its text again" in {
+      val g = """{
+        "scopeName": "source.r",
+        "patterns": [
+          { "match": "(\\w+)\\(",
+            "captures": { "1": { "name": "entity.name.function.r", "patterns": [ { "match": "get", "name": "keyword.r" } ] } } }
+        ]
+      }"""
+      val h = classHl(g)
+      h.highlight("getx(") shouldBe """<span class="hl-keyword">get</span><span class="hl-function">x</span>("""
+      scopesOfToken(h, "getx(", "get") shouldBe "source.r entity.name.function.r keyword.r"
+    }
+
+    "captures: group 0's scope stays beneath the groups inside it" in {
+      val g = """{
+        "scopeName": "source.z",
+        "patterns": [ { "match": "(a)b", "captures": { "0": { "name": "meta.z" }, "1": { "name": "keyword.z" } } } ]
+      }"""
+      scopesOfToken(classHl(g), "ab", "a") shouldBe "source.z meta.z keyword.z"
+    }
+  }
+
+  "applyEndPatternLast" - {
+    def endLast(flag: String): String =
+      s"""{ "scopeName": "source.l", "patterns": [ { "begin": "\\\\[", "end": "\\\\]", "name": "meta.l", $flag "patterns": [ { "match": "\\\\]\\\\]", "name": "keyword.l" } ] } ] }"""
+
+    "applyEndPatternLast: the end wins a tie by default" in {
+      classHl(endLast("")).highlight("[a]] b") should not include "hl-keyword"
+    }
+
+    "applyEndPatternLast: under it an inner rule wins the tie" in {
+      classHl(endLast("\"applyEndPatternLast\": 1,")).highlight("[a]] b") should include(
+        """<span class="hl-keyword">]]</span>""")
+    }
+  }
+
+  "the loop guards" - {
+    "guards: a pair that opens and closes at one place matching nothing stays open, and the line ends" in {
+      val g = """{
+        "scopeName": "source.p",
+        "patterns": [ { "begin": "(?=x)", "end": "(?=x)", "name": "string.p" } ]
+      }"""
+      classHl(g).highlight("axy\nz") shouldBe
+        """a<span class="hl-string">xy</span>""" + "\n" + """<span class="hl-string">z</span>"""
+    }
+
+    "guards: a pair opening again where it already is, matching nothing, does not" in {
+      val g = """{
+        "scopeName": "source.o",
+        "patterns": [ { "begin": "(?=y)", "end": "z", "name": "string.o", "patterns": [ { "include": "$self" } ] } ]
+      }"""
+      classHl(g).highlight("xy") shouldBe """x<span class="hl-string">y</span>"""
+    }
+
+    "$base: in a grammar on its own it is the grammar itself" in {
+      val g = """{
+        "scopeName": "source.b",
+        "patterns": [
+          { "match": "\\bkw\\b", "name": "keyword.b" },
+          { "begin": "\\(", "end": "\\)", "patterns": [ { "include": "$base" } ] }
+        ]
+      }"""
+      classHl(g).highlight("(kw)") should include("""<span class="hl-keyword">kw</span>""")
+    }
+  }
+
+  // The category group's tests also have a Scala original ("the category is read from the whole scope stack");
+  // these are the sysl suite's renderings of the same stack-reading rule, over a grammar of its own.
+  "the sysl suite's stacked-scope renderings" - {
+    val stacked = """{
+      "scopeName": "source.stacked",
+      "patterns": [
+        { "begin": "\"", "end": "\"", "name": "string.quoted.double.stacked",
+          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.stacked" } },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.stacked" } },
+          "patterns": [
+            { "match": ",", "name": "punctuation.separator.stacked" },
+            { "match": "_+", "name": "meta.foo.stacked" }
+          ] },
+        { "match": "(//).*$", "name": "comment.line.stacked",
+          "captures": { "1": { "name": "punctuation.definition.comment.stacked" } } },
+        { "match": "<", "name": "punctuation.definition.tag.stacked" }
+      ]
+    }"""
+
+    "a string's quotes take the string category" in {
+      classHl(stacked).highlight("\"hi\"") shouldBe
+        """<span class="hl-string">&quot;</span><span class="hl-string">hi</span><span class="hl-string">&quot;</span>"""
+    }
+
+    "a line comment's marker takes the comment category" in {
+      classHl(stacked).highlight("// x") shouldBe
+        """<span class="hl-comment">//</span><span class="hl-comment"> x</span>"""
+    }
+
+    "a punctuation.definition scope with no categorised parent stays punctuation" in {
+      classHl(stacked).highlight("<") shouldBe """<span class="hl-punctuation">&lt;</span>"""
+    }
+
+    "a punctuation scope that is not a definition stays punctuation inside a string" in {
+      classHl(stacked).highlight("\"a,b\"") shouldBe
+        """<span class="hl-string">&quot;</span><span class="hl-string">a</span><span class="hl-punctuation">,</span><span class="hl-string">b</span><span class="hl-string">&quot;</span>"""
+    }
+
+    "an uncategorised innermost scope takes the category of the scope enclosing it" in {
+      classHl(stacked).highlight("\"a__b\"") shouldBe
+        """<span class="hl-string">&quot;</span><span class="hl-string">a</span><span class="hl-string">__</span><span class="hl-string">b</span><span class="hl-string">&quot;</span>"""
+    }
+
+    "category_of reads the whole stack and is the category the renderer uses" in {
+      val h = classHl(stacked)
+      h.categoryOf(h.tokens("\"hi\"").head.head) shouldBe "string"
+    }
+  }
 }

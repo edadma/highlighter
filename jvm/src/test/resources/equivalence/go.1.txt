@@ -1,0 +1,41 @@
+// Package store keeps things.
+package store
+
+import (
+	"errors"
+	"fmt"
+	"sync"
+)
+
+const MaxItems = 1 << 10
+
+var ErrFull = errors.New("store is full")
+
+type Store[K comparable, V any] struct {
+	mu    sync.Mutex
+	items map[K]V
+}
+
+func New[K comparable, V any]() *Store[K, V] {
+	return &Store[K, V]{items: make(map[K]V)}
+}
+
+func (s *Store[K, V]) Put(k K, v V) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.items) >= MaxItems {
+		return fmt.Errorf("put %v: %w", k, ErrFull)
+	}
+	s.items[k] = v
+	return nil
+}
+
+func main() {
+	ch := make(chan int, 3)
+	go func() { ch <- 42 }()
+	select {
+	case v := <-ch:
+		fmt.Println(`raw string`, v, 3.14, 'x', "naïve")
+	default:
+	}
+}

@@ -1,0 +1,5 @@
+<link>
+<a href="x"/>
+<!-- hi -->
+<atom:link href="x"/>
+<a xmlns:atom="x"/>
