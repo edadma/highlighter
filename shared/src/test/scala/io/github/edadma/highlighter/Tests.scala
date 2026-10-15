@@ -582,6 +582,12 @@ class Tests extends AnyFreeSpec with Matchers {
       }"""
       classHl(g).highlight("<a> b") shouldBe """<span class="hl-string">&lt;a&gt;</span> b"""
     }
+
+    "vscode-textmate's own rule: every backslash-digit is a reference" in {
+      Tokenizer.hasBackReferences("^\\1$") shouldBe true
+      Tokenizer.hasBackReferences("\\\\1") shouldBe true
+      Tokenizer.hasBackReferences("\\d+\\b") shouldBe false
+    }
   }
 
   "character boundaries" - {
@@ -722,6 +728,12 @@ class Tests extends AnyFreeSpec with Matchers {
 
     "\\A: holds at no other line's start" in {
       classHl(shebang).highlight("x\n#!y") shouldBe "x\n#!y"
+    }
+
+    "\\A: the rewrite leaves an escaped backslash before an A alone" in {
+      Tokenizer.withoutStartAnchor("\\A#!") shouldBe "\\x{FFFF}#!"
+      Tokenizer.withoutStartAnchor("\\\\A") shouldBe "\\\\A"
+      Tokenizer.withoutStartAnchor("a\\Ab") shouldBe "a\\x{FFFF}b"
     }
   }
 
