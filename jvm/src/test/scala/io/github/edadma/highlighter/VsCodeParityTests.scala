@@ -95,9 +95,7 @@ class VsCodeParityTests extends AnyFreeSpec with Matchers {
       for n <- corpus do Files.exists(dir.resolve(s"$n.vscode.html")) shouldBe true
     }
 
-    // Ignored while the oniguruma engine reads `\w` as ASCII: the lines that differ are the ones holding an accented
-    // letter or a CJK name, where VS Code's `\w+` takes the whole word.
-    "every corpus file but html.1 renders exactly as VS Code renders it" ignore {
+    "every corpus file but html.1 renders exactly as VS Code renders it" in {
       val bad = for n <- corpus if n != "html.1"; d = differing(n) if d.nonEmpty yield s"$n: lines $d"
       bad shouldBe empty
     }

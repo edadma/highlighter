@@ -57,7 +57,7 @@ lazy val highlighter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 //    ),
     libraryDependencies ++= Seq(
       "dev.zio"          %%% "zio-json"   % "0.7.42",
-      "io.github.edadma" %%% "oniguruma"  % "0.0.7",
+      "io.github.edadma" %%% "oniguruma"  % "0.0.8",
     ),
     publishMavenStyle      := true,
     Test / publishArtifact := false,

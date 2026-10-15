@@ -1,6 +1,6 @@
 package io.github.edadma.highlighter
 
-import io.github.edadma.oniguruma.{Regex, Match => OnigMatch}
+import io.github.edadma.oniguruma.{Regex, Syntax, Match => OnigMatch}
 import scala.collection.mutable
 
 // Cutting text into tokens, line by line, with a stack of the `begin`/`end` pairs still open carried from one line
@@ -42,7 +42,7 @@ case class ResolvedPattern(
   lazy val regexNotFirst: Regex =
     val rewritten = Tokenizer.withoutStartAnchor(source)
     if rewritten == source then regex
-    else Regex.compile(rewritten).getOrElse(regex)
+    else Regex.compile(rewritten, Syntax.Oniguruma).getOrElse(regex)
 
 // Sentinel pattern for $self includes -- resolved lazily at tokenization
 // time. The `regex` field is filler: every consumer filters with
@@ -159,9 +159,13 @@ class Tokenizer(grammar: Grammar):
     * caller (resolveOne) drops the pattern so the rest of the grammar
     * still loads -- the alternative would be to fail the whole
     * `fromJson`, which loses many usable patterns to one bad one in a
-    * 6000-line VS Code grammar. */
+    * 6000-line VS Code grammar.
+    *
+    * Every pattern is read in Oniguruma's own syntax, as vscode-oniguruma
+    * reads it, so `\w`, `\d`, `\s`, `\b` and the POSIX classes are Unicode
+    * and a word holding `é` is one word, as it is in VS Code. */
   private def compileRegex(pat: String): Option[Regex] =
-    Regex.compile(pat) match
+    Regex.compile(pat, Syntax.Oniguruma) match
       case Right(r) => Some(r)
       case Left(msg) =>
         warningsBuf += s"regex compile failed: $pat — $msg"

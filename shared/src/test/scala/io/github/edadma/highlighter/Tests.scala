@@ -507,28 +507,25 @@ class Tests extends AnyFreeSpec with Matchers {
     ]
   }"""
 
-  // The oniguruma engine reads `\w` as ASCII (Ruby's rule) where vscode-oniguruma reads it as Unicode, so `\w+` stops
-  // at an accented letter and a keyword rule finds a boundary inside a word. The fix is the engine's option, not this
-  // library's; these are ignored until `oniguruma` offers it.
   "\\b is Unicode: a keyword inside a word is not a keyword" - {
-    "\\b: 'if' at the end of 'síif' is not a keyword" ignore {
+    "\\b: 'if' at the end of 'síif' is not a keyword" in {
       val out = classHl(keywordGrammar).highlight("síif")
       out should not include "hl-keyword"
       out shouldBe """<span class="hl-variable">síif</span>"""
     }
 
-    "\\b: 'real' at the start of 'realíssimo' is not a keyword" ignore {
+    "\\b: 'real' at the start of 'realíssimo' is not a keyword" in {
       val out = classHl(keywordGrammar).highlight("realíssimo")
       out should not include "hl-keyword"
       out shouldBe """<span class="hl-variable">realíssimo</span>"""
     }
 
-    "\\b: a keyword standing alone beside a non-ASCII word still is one" ignore {
+    "\\b: a keyword standing alone beside a non-ASCII word still is one" in {
       classHl(keywordGrammar).highlight("if síif") shouldBe
         """<span class="hl-keyword">if</span> <span class="hl-variable">síif</span>"""
     }
 
-    "\\w is Unicode, as in VS Code: one \\w+ takes 'naïve' whole" ignore {
+    "\\w is Unicode, as in VS Code: one \\w+ takes 'naïve' whole" in {
       classHl(keywordGrammar).highlight("naïve") shouldBe """<span class="hl-variable">naïve</span>"""
     }
   }
