@@ -363,7 +363,8 @@ class RealWorldGrammarTests extends AnyFreeSpec with Matchers {
     }
 
     // `.foo` is `entity.other.attribute-name.class.css` → `function`
-    // (entity fallback). The leading `.` is punctuation.
+    // (entity fallback). The leading `.` is `punctuation.definition.entity.css`, so it takes the
+    // selector's category too.
     "class selector" in {
       hl("css").highlight(".foo { color: red }").shouldHighlight("function", "foo")
     }

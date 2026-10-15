@@ -34,11 +34,21 @@ class Highlighter(grammar: Grammar, mode: RenderMode = ClassMode()):
   /** Collapse a TextMate scope to one of the rendering categories — `keyword`, `string`, `comment`, `number`,
     * `type`, `function`, `variable`, `operator`, `punctuation` — or `""` when the scope carries no colour of its
     * own (plain source text). The HTML back ends use this to pick a CSS class or theme colour; a token-consuming
-    * caller uses it the same way against its own palette. A token's effective scope is its last (innermost) one. */
+    * caller uses it the same way against its own palette. A token's category comes from its whole scope stack:
+    * see [[categoryOf]]. */
   def category(scope: String): String = scopeCategory(scope)
 
-  /** The rendering category of a token — [[category]] applied to the token's innermost scope. */
-  def categoryOf(token: Token): String = scopeCategory(token.scopes.lastOption.getOrElse(""))
+  /** The rendering category of a token, read from its whole scope stack the way a TextMate theme reads it. The
+    * innermost scope that has a category wins, so text inside a string with an uncoloured `meta.…` scope of its
+    * own is still a string. The exception is a `punctuation.definition.…` scope — the quotes of a string, the
+    * marker of a comment — which belongs to the construct it delimits: it takes the category of the nearest
+    * enclosing scope that has one, and is `punctuation` only when none does. */
+  def categoryOf(token: Token): String =
+    val categorised = token.scopes.reverse.map(s => (s, scopeCategory(s))).filter(_._2.nonEmpty)
+    categorised.find(!_._1.startsWith("punctuation.definition.")) match
+      case Some((_, category))          => category
+      case None if categorised.nonEmpty => "punctuation"
+      case None                         => ""
 
   private def mergeTokens(tokens: List[Token]): List[Token] =
     tokens.foldLeft(List.empty[Token]) { (acc, tok) =>
@@ -51,17 +61,16 @@ class Highlighter(grammar: Grammar, mode: RenderMode = ClassMode()):
   private def renderToken(token: Token): String =
     if token.text.isEmpty then return ""
 
-    val escaped = escapeHtml(token.text)
-    val scope = token.scopes.lastOption.getOrElse("")
+    val escaped  = escapeHtml(token.text)
+    val category = categoryOf(token)
 
     mode match
       case ClassMode(prefix) =>
-        val cls = scopeToClass(scope, prefix)
-        if cls.nonEmpty then s"""<span class="$cls">$escaped</span>"""
+        if category.nonEmpty then s"""<span class="$prefix$category">$escaped</span>"""
         else escaped
 
       case InlineMode(theme) =>
-        val color = scopeToColor(scope, theme)
+        val color = categoryColor(category, theme)
         if color.nonEmpty then s"""<span style="color:$color">$escaped</span>"""
         else escaped
 
@@ -71,14 +80,8 @@ class Highlighter(grammar: Grammar, mode: RenderMode = ClassMode()):
       .replace(">", "&gt;")
       .replace("\"", "&quot;")
 
-  private def scopeToClass(scope: String, prefix: String): String =
-    if scope.isEmpty then ""
-    else
-      val category = scopeCategory(scope)
-      if category.nonEmpty then s"$prefix$category" else ""
-
-  private def scopeToColor(scope: String, theme: Theme): String =
-    scopeCategory(scope) match
+  private def categoryColor(category: String, theme: Theme): String =
+    category match
       case "keyword"     => theme.keyword
       case "string"      => theme.string
       case "comment"     => theme.comment

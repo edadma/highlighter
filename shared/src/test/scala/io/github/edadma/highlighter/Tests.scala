@@ -87,6 +87,65 @@ class Tests extends AnyFreeSpec with Matchers {
     }
   }
 
+  // Delimiters scoped the way real grammars scope them: the quotes and the comment marker are
+  // `punctuation.definition.…` inside the string or comment they delimit.
+  val delimitedGrammar = """{
+    "scopeName": "source.delim",
+    "patterns": [
+      { "begin": "\"", "end": "\"", "name": "string.quoted.double.delim",
+        "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.delim" } },
+        "endCaptures": { "0": { "name": "punctuation.definition.string.end.delim" } },
+        "patterns": [
+          { "match": ",", "name": "punctuation.separator.delim" },
+          { "match": "@", "name": "meta.at.delim" }
+        ] },
+      { "match": "(//)(.*)$", "name": "comment.line.delim",
+        "captures": { "1": { "name": "punctuation.definition.comment.delim" } } },
+      { "match": "\\[", "name": "punctuation.definition.bracket.delim" }
+    ]
+  }"""
+
+  "the category is read from the whole scope stack" - {
+    def categories(code: String): List[(String, String)] =
+      val Right(hl) = Highlighter.fromJson(delimitedGrammar): @unchecked
+      hl.tokens(code).flatten.map(t => (t.text, hl.categoryOf(t)))
+
+    "a string's quotes take the string's category" in {
+      categories("\"hi\"") shouldBe List(("\"", "string"), ("hi", "string"), ("\"", "string"))
+    }
+
+    "a comment's marker takes the comment's category" in {
+      categories("// note").map(_._2).distinct shouldBe List("comment")
+    }
+
+    "a definition with no categorised enclosing scope is still punctuation" in {
+      categories("[") shouldBe List(("[", "punctuation"))
+    }
+
+    "a definition nested in another definition still reaches the construct around both" in {
+      val Right(hl) = Highlighter.fromJson(delimitedGrammar): @unchecked
+      val nested =
+        Token("<", List("source.delim", "string.quoted.double.delim", "punctuation.definition.tag.delim",
+          "punctuation.definition.string.begin.delim"))
+      hl.categoryOf(nested) shouldBe "string"
+    }
+
+    "other punctuation inside a string keeps its own category" in {
+      categories("\"a,b\"") should contain((",", "punctuation"))
+    }
+
+    "an uncategorised inner scope inside a string is string" in {
+      categories("\"a@b\"") should contain(("@", "string"))
+    }
+
+    "rendered HTML agrees with categoryOf" in {
+      val Right(hl) = Highlighter.fromJson(delimitedGrammar, ClassMode("hl-")): @unchecked
+      hl.highlight("\"hi\"") shouldBe """<span class="hl-string">&quot;</span><span class="hl-string">hi</span><span class="hl-string">&quot;</span>"""
+      val Right(inline) = Highlighter.fromJson(delimitedGrammar, InlineMode(Theme.OneLight)): @unchecked
+      inline.highlight("// x") should not include s"color:${Theme.OneLight.punctuation}"
+    }
+  }
+
   "html escaping" - {
     "escapes angle brackets" in {
       val Right(hl) = Highlighter.fromJson(simpleGrammar): @unchecked
